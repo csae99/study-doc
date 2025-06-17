@@ -1,0 +1,230 @@
+Azure Resource Manager (ARM) Templates 
+
+What is an ARM Template?
+
+An ARM template is a declarative JSON file used to define and manage Azure resources. It describes the desired state of your infrastructure, and
+Azure Resource Manager (ARM) uses this template to deploy the resources and ensure they are configured as defined.
+
+Key Features of ARM Templates:
+
+ Declarative: You define what you want, and Azure ensures it's deployed accordingly (you don't have to specify the sequence of operations).
+ Idempotent: Running the same ARM template multiple times results in the same deployment (i.e., it won't create duplicate resources if they already exist).
+ Infrastructure as Code (IaC): ARM templates allow you to manage your Azure infrastructure through code, which can be version-controlled, reused, and shared.
+
+Structure of an ARM Template
+
+An ARM template is made up of several sections that define various aspects of your deployment:
+
+1. `$schema`: The schema URL that defines the structure of the template.
+
+    Defines the version of the ARM template being used.
+
+   Example:
+
+   ```json
+   "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#"
+   ```
+
+2. `contentVersion`: The version of the template itself.
+
+    Helps in tracking and managing different versions of the template.
+
+   Example:
+
+   ```json
+   "contentVersion": "1.0.0.0"
+   ```
+
+3. `resources`: The most important section, where you define the resources you want to deploy (e.g., VMs, storage accounts, networks, etc.).
+
+    This is where you specify the Azure resources you want to create.
+
+   Example:
+
+   ```json
+   "resources": [
+     {
+       "type": "Microsoft.Compute/virtualMachines",
+       "apiVersion": "2019-07-01",
+       "location": "East US",
+       "properties": {
+         "hardwareProfile": {
+           "vmSize": "Standard_D2_v3"
+         }
+       }
+     }
+   ]
+   ```
+
+4. `parameters`: Optional. This section allows you to define parameters that can be passed to the template at runtime.
+
+    It allows for reusability and flexibility of the template. Parameters are values that are provided when the template is deployed.
+
+   Example:
+
+   ```json
+   "parameters": {
+     "vmSize": {
+       "type": "string",
+       "defaultValue": "Standard_DS1_v2",
+       "allowedValues": [
+         "Standard_DS1_v2",
+         "Standard_DS2_v2"
+       ],
+       "metadata": {
+         "description": "The size of the virtual machine."
+       }
+     }
+   }
+   ```
+
+5. `variables`: Optional. This section defines values that can be used throughout the template, which helps simplify the template and make it more 
+                           maintainable.
+
+    Useful for repeating or calculated values.
+
+   Example:
+
+   ```json
+   "variables": {
+     "location": "East US",
+     "vmName": "myVM"
+   }
+   ```
+
+6. `outputs`: Optional. This section is used to return values (e.g., IP addresses, URLs) after the deployment.
+
+    After deployment, you can output useful information, such as the public IP address of a newly created VM.
+
+   Example:
+
+   ```json
+   "outputs": {
+     "adminUsername": {
+       "type": "string",
+       "value": "[parameters('adminUsername')]"
+     }
+   }
+   ```
+
+---
+
+Example of an ARM Template
+
+example of an ARM template to deploy a Virtual Machine in Azure:
+
+```json
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "resources": [
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2019-07-01",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[variables('vmName')]",
+          "adminUsername": "[parameters('adminUsername')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2016-Datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "[variables('vmName')]-osdisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "East US"
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_DS1_v2"
+    },
+    "adminUsername": {
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "vmName": "myVM",
+    "nicName": "myVM-nic"
+  },
+  "outputs": {
+    "vmName": {
+      "type": "string",
+      "value": "[variables('vmName')]"
+    }
+  }
+}
+```
+
+In this example:
+
+ Parameters define the user-provided values like `adminUsername` and `adminPassword`.
+ Variables are used for setting the VM name and NIC name.
+ Resources define the Azure Virtual Machine resource, its size, and its configuration.
+ Outputs return the VM name after deployment.
+
+Key Concepts in ARM Templates
+
+1. Declarative Syntax: You simply specify what resources to create, not how to create them.
+2. Idempotency: Running the same ARM template multiple times produces the same result (i.e., no duplication).
+3. Template Expressions: ARM templates support expressions for dynamic values (like `[variables('value')]` or `[resourceId('resourceType', 'resourceName')]`).
+4. Nested Deployments: Templates can be used to deploy resources within other templates, which is great for modularization.
+
+How to Deploy an ARM Template
+
+1. Deploy via Azure Portal:
+
+    In the Azure Portal, you can directly upload ARM templates under the "Custom Deployment" section in the "Deploy a Custom Template" option.
+
+2. Deploy via Azure CLI:
+   Use the Azure CLI to deploy your ARM template:
+
+   ```bash
+   az deployment group create \
+     --resource-group <ResourceGroupName> \
+     --template-file <path-to-template>.json \
+     --parameters <path-to-parameters>.json
+   ```
+
+3. Deploy via PowerShell:
+   Use Azure PowerShell to deploy the template:
+
+   ```powershell
+   New-AzResourceGroupDeployment -ResourceGroupName <ResourceGroupName> -TemplateFile <path-to-template>.json
+   ```
+
+Advantages of ARM Templates
+
+ Consistency: Ensure that the same infrastructure is deployed across different environments.
+ Automation: Enables repeatable, automated infrastructure deployment.
+ Versioning: Templates can be versioned and stored in source control (e.g., Git) for better change tracking.
+ Scalability: ARM templates can deploy large, complex environments with minimal effort.
+ Integration with CI/CD: ARM templates can be integrated into a Continuous Integration/Continuous Deployment (CI/CD) pipeline.
+

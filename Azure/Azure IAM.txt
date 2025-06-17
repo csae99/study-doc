@@ -1,0 +1,177 @@
+Azure Identity and Access Management (IAM) 
+
+Azure Entra ID
+
+Overview of Azure IAM
+
+Azure IAM controls who can access what in your Azure environment. It is primarily implemented through Role-Based Access Control (RBAC), but it also integrates
+with Azure Active Directory (Azure AD) and supports Managed Identities, Conditional Access, Privileged Identity Management (PIM), and more.
+
+Core Components of Azure IAM
+
+ 1. Azure Active Directory (Azure AD)
+
+This is the backbone of Azure IAM. Azure AD handles:
+
+ Authentication: Verifying identity (who you are).
+ Authorization: Determining what you can do (based on assigned roles).
+ User & group management: Creating and managing users, groups, and service principals.
+
+Azure AD identities include:
+
+ Users (human users)
+ Groups (collection of users)
+ Service principals (apps/services)
+ Managed identities (identities for Azure resources)
+
+ 2. Role-Based Access Control (RBAC)
+
+RBAC is used to manage authorization in Azure.
+
+Key Concepts:
+
+ Security Principal: An object representing a user, group, service principal, or managed identity.
+ Role Definition: A collection of permissions. There are built-in roles (like Owner, Contributor, Reader) and custom roles.
+ Scope: Where the access applies — subscription, resource group, or specific resource.
+ Role Assignment: Connects a security principal to a role at a specific scope.
+
+ Example:
+
+ Assign a user (security principal) the Reader role (role definition) on a resource group (scope).
+
+ 3. Managed Identities
+
+Used for authenticating Azure services without needing to manage secrets.
+
+Two types:
+
+ System-assigned: Tied to a single resource (e.g., VM or Function App).
+ User-assigned: Independent identity reusable across multiple resources.
+
+ 4. Privileged Identity Management (PIM)
+
+PIM allows for just-in-time (JIT) access to elevate permissions temporarily. It enhances security by reducing the number of always-active privileged accounts.
+
+Features:
+
+ Time-bound access
+ Approval workflows
+ Access reviews
+ Audit history
+
+ 5. Conditional Access
+
+Policies that enforce controls on access based on conditions such as:
+
+ User location
+ Device compliance
+ Risk level
+ Application being accessed
+
+This helps apply Zero Trust principles.
+
+Common IAM Scenarios
+
+| Scenario                                                  | Azure IAM Solution                                                 |
+| --------------------------------------------------------- | ------------------------------------------------------------------ |
+| Give read-only access to a storage account                | Use RBAC with Reader role on the storage account                   |
+| Let an Azure VM access a Key Vault                        | Assign a managed identity to the VM and grant Key Vault access     |
+| Ensure a developer has limited access during office hours | Use Conditional Access and RBAC                                    |
+| Allow an app to log in and call APIs securely             | Register it in Azure AD and use service principal with proper role |
+
+Security Best Practices
+
+ Use least privilege: Only grant permissions required.
+ Use PIM for admin roles.
+ Regularly perform access reviews.
+ Monitor with Azure Monitor / Log Analytics / Defender for Cloud.
+ Avoid using classic subscription admin roles; prefer RBAC.
+ Use managed identities instead of hard-coded secrets.
+
+--------
+
+What Is a Service Principal in Azure (Entra ID)?
+
+In Azure Entra ID (formerly Azure AD):
+
+ A service principal is an identity for an application or service to access Azure resources.
+ It's created when you register an app in Entra ID.
+ It can be assigned roles (RBAC) and can authenticate using certificates, client secrets, or federated identities.
+
+ Example use case:
+
+> A CI/CD tool needs to deploy resources in Azure. You create a service principal, grant it "Contributor" access, and use its credentials in your pipeline.
+
+AWS Equivalent of a Service Principal
+
+ 1. IAM Role (for Applications)
+
+ Used by applications or services (e.g., EC2, Lambda) to assume temporary credentials via STS.
+ The IAM Role defines policies (permissions) and can be assumed by:
+
+   AWS services
+   External identities
+   Federated users
+ You don’t need a username/password or client secret.
+
+> Comparable to Azure Managed Identity + Role Assignment
+
+---
+
+2. IAM User (less preferred for apps)
+
+ Can be used by applications with access keys, but not recommended (hard to rotate, security risk).
+
+> Roughly similar to using a Service Principal with client secret — less secure
+
+---
+
+3. Service Principals in AWS (special meaning)
+
+ In AWS documentation, the term "service principal" refers to AWS services themselves, like:
+
+   `ec2.amazonaws.com`
+   `lambda.amazonaws.com`
+
+These are used in trust policies of IAM roles to specify which AWS service can assume the role.
+
+ Example:
+
+```json
+{
+  "Effect": "Allow",
+  "Principal": {
+    "Service": "lambda.amazonaws.com"
+  },
+  "Action": "sts:AssumeRole"
+}
+```
+
+> This is not an application identity, but rather AWS services that can assume the role.
+
+---
+
+ Azure Service Principal vs AWS IAM Role (Comparison Table)
+
+| Feature            | Azure Service Principal       | AWS IAM Role                              |
+| ------------------ | ----------------------------- | ----------------------------------------- |
+| Identity type      | Application identity          | Application/Service identity              |
+| Auth method        | Client secret, certificate    | Temporary credentials (STS)               |
+| Permissions        | Role assignments (RBAC)       | IAM policies                              |
+| Rotation           | Manual or via Entra           | Automatic (STS)                           |
+| Federation support | Yes (OIDC, SAML)              | Yes (OIDC, SAML, IAM Identity Center)     |
+| Common use case    | CI/CD, app calling Azure APIs | Lambda, EC2, apps accessing AWS resources |
+
+Summary
+
+ Azure "Service Principal" ≈ AWS IAM Role for Apps
+ Azure uses Entra ID to manage these identities.
+ AWS uses IAM and STS to manage temporary identities.
+ AWS uses the term “service principal” differently — as trusted AWS services in role trust policies.
+
+
+
+trivy image --ignore-unfixed --vuln-type os,library --severity HIGH,CRITICAL php:8.2-apache-bookworm
+
+
+trivy image --ignore-unfixed --skip-files /boot /lib/modules php:8.2-apache-bookworm

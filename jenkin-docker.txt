@@ -1,0 +1,295 @@
+Jenkins installation in docker container
+
+docker run -p 8080:8080 -p 50000:50000 -d -v jenkins_home:/var/jenkins_home  jenkins/jenkins:lts
+
+docker ps
+
+docker logs container id
+
+copy the password
+ad20bebc98a44de7894105c52f7aa3cc
+// /var/jenkins_home/secrets/initialAdminPassword
+localhost:8080
+/var/lib/jenkins/secrets/initialAdminPassword
+# Copy file to jenkins workspace
+docker cp D:\Futurism_Backup\Documents\Git\two-tier-flask-app 56847a45601f:/var/jenkins_home/workspace/demo/
+
+----
+
+pipeline {
+    agent any
+
+    stages {
+        stage('Enter Container and Check PWD') {
+            steps {
+                script {
+                    // Define the container name (replace with your actual container name or ID)
+                    def containerName = '4515dedb65bc'  // Update this with your actual container name
+
+                    // Run the commands inside the Jenkins container
+                    sh """
+                        docker exec  ${containerName} /bin/bash -c 'cd /var/jenkins_home/workspace/demo/two-tier-flask-app && pwd'
+                    """
+                }
+            }
+        }
+    }
+}
+----
+# Install plugins such as  Eclipse Temurin installer Plugin , openJDK-native-plugin , CloudBees Docker Build and Publish , Docker Plugin , Docker Pipeline
+
+# Manage jenkins -> Configure tools -> Add JDK , Docker and other things as per requirement
+
+
+# install docker in docker because jenkins latest version dosesnt have docker cli
+
+# create custom-jenkins-with-docker Dockerfile
+---
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Install Docker CLI tools
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg | tee /etc/apt/trusted.gpg.d/docker.asc > /dev/null \
+    && echo "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null \
+    && apt-get update \
+    && apt-get install -y docker-ce-cli \
+    && rm -rf /var/lib/apt/lists/*
+
+USER jenkins
+---
+
+docker build -t custom-jenkins-with-docker .
+
+docker run --name jenkins -p 8080:8080 -p 50000:50000 -d -v jenkins_home:/var/jenkins_home -v /var/run/docker.sock:/var/run/docker.sock custom-jenkins-with-docker
+
+docker logs
+
+docker exec -it -u root 56847a45601f /bin/bash
+
+# install sudo
+apt-get update && apt-get install sudo
+
+#add jenkins to sudo
+usermod -aG sudo jenkins
+
+# add docker group , if already not exist
+sudo groupadd docker
+
+sudo usermod -aG docker jenkins
+
+ls -l /var/run/docker.sock
+
+srw-rw---- 1 root root 0 Mar 27 11:04 /var/run/docker.sock
+
+sudo chown root:docker /var/run/docker.sock
+
+ls -l /var/run/docker.sock
+
+srw-rw---- 1 root docker 0 Mar 27 11:04 /var/run/docker.sock
+
+
+sudo apt-get update
+sudo apt-get install jq
+
+
+
+
+## install docker-compose
+---
+#!/bin/bash
+
+# Set the desired version of Docker Compose (e.g., 1.29.2)
+DOCKER_COMPOSE_VERSION="1.29.2"
+
+DOCKER_VERSION="4.39"
+# Download Docker Compose binary
+curl -L "https://github.com/docker/compose/releases/download/$DOCKER_COMPOSE_VERSION/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+# Make the binary executable
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Verify installation
+docker-compose --version
+---
+
+sudo chmod +x /usr/local/bin/docker-compose
+
+ls -l /usr/local/bin/docker-compose
+
+-rwxr-xr-x 1 root root 12737304 Mar 27 14:42 /usr/local/bin/docker-compose
+
+echo 'export PATH=$PATH:/usr/local/bin' >> ~/.bashrc
+source ~/.bashrc
+
+sudo apt update
+
+sudo apt install vim
+
+# add this to docker-compose.yml file
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock
+----------------
+
+sudo apt update
+sudo apt install wget apt-transport-https gnupg lsb-release -y
+
+wget https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh
+chmod +x install.sh
+./install.sh
+
+---------------------
+
+
+
+wget https://desktop-release.q.us-east-1.amazonaws.com/latest/amazon-q.appimage
+
+  ---
+  
+  
+  pipeline {
+    agent any
+
+    stages {
+        stage('Enter Container and Check PWD') {
+            steps {
+                script {
+                    // Define the container name (replace with your actual container name or ID)
+                    def containerName = '4515dedb65bc'  // Update this with your actual container name
+
+                    // Run the commands inside the Jenkins container without the -it flag (non-interactive)
+                    sh """
+                        docker exec ${containerName} /bin/bash -c 'cd /var/jenkins_home/workspace/demo/two-tier-flask-app && pwd'
+                    """
+                }
+            }
+        }
+        stage('Build and Run Docker Compose') {
+            steps {
+                script {
+                    // Change to the correct directory where your docker-compose.yml is located
+                    dir('/var/jenkins_home/workspace/demo/two-tier-flask-app') {
+                        // Run Docker Compose
+                        sh "docker-compose up -d --build"
+                        echo "Docker Compose build and run successful"
+                    }
+                }
+            }
+        }
+    }
+}
+
+----
+node {
+    // First stage: Enter Container and Check PWD
+    stage('Enter Container and Check PWD') {
+        // Define the container name (replace with your actual container name or ID)
+        def containerName = 'b42c75e12cd6'  // Update this with your actual container name
+        
+        // Run the commands inside the Jenkins container without the -it flag (non-interactive)
+        sh """
+            docker exec ${containerName} /bin/bash -c 'cd /var/jenkins_home/workspace/demo/two-tier-flask-app && pwd'
+        """
+    }
+
+    // Second stage: Build and Run Docker Compose
+    stage('Build and Run Docker Compose') {
+        // Change to the correct directory where your docker-compose.yml is located
+        dir('/var/jenkins_home/workspace/demo/two-tier-flask-app') {
+            // Run Docker Compose
+            sh "docker-compose up -d --build"
+            echo "Docker Compose build and run successful"
+        }
+    }
+}
+
+
+---
+
+ls -l /var/lib/mysql/mysql.sock
+
+-----------------------------------------
+
+pipeline {
+    agent any
+
+    stages {
+         stage('Enter Container and Check PWD') {
+            steps {
+                script {
+                    // Use the container ID from Jenkins credentials
+                    withCredentials([string(credentialsId: 'ContainerID', variable: 'CONTAINER_ID')]) {
+                        // Run the commands inside the container using the secret container ID
+                        sh """
+                            docker exec ${CONTAINER_ID} /bin/bash -c 'cd /var/jenkins_home/workspace/demo/two-tier-flask-app && pwd'
+                        """
+                    }
+                }
+            }
+        }
+        stage("Trivy File System Scan"){
+            steps{
+                script {
+                    // Change to the correct directory where your docker-compose.yml is located
+                    dir('/var/jenkins_home/workspace/demo/two-tier-flask-app') {
+                        // trivy file scan
+                        sh "trivy fs ."
+                        echo "Trivy file scan successful"
+                    }
+                }
+            }
+        }
+       stage('Parallel Test Execution') {
+            parallel {
+                stage('Unit Tests') {
+                    steps {
+                        echo 'Running unit tests...'
+                        // Replace with actual command
+                        // sh './run-unit-tests.sh'
+                    }
+                }
+
+                stage('Integration Tests') {
+                    steps {
+                        echo 'Running integration tests...'
+                        // Replace with actual command
+                        // sh './run-integration-tests.sh'
+                    }
+                }
+
+                stage('UI Tests') {
+                    steps {
+                        echo 'Running UI tests...'
+                        // Replace with actual command
+                        // sh './run-ui-tests.sh'
+                    }
+                }
+            }
+        }
+        stage('Build and Run Docker Compose') {
+            steps {
+                script {
+                    // Change to the correct directory where your docker-compose.yml is located
+                    dir('/var/jenkins_home/workspace/demo/two-tier-flask-app') {
+                        // Run Docker Compose
+                        sh "docker-compose up -d --build"
+                        echo "Docker Compose build and run successful"
+                    }
+                }
+            }
+        }
+    }
+}
+
+-----------------------------------------------------------
+
+
+Error: Kubernetes cluster unreachable: Get <EKS IP>: dial tcp 13.59.6.24:443: i/o timeout
+E0527 09:45:52.399378   28707 memcache.go:265] "Unhandled Error" err="couldn't get current server API group list: Get \<EKS IP>/api?timeout=32s\": dial tcp 18.188.250.226:443: i/o timeout"
+
+https://stackoverflow.com/questions/52276082/dns-problem-on-aws-eks-when-running-in-private-subnets

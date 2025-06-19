@@ -1,0 +1,81 @@
+Create project using NGINX---DJANGO---MYSQL 
+
+- YT : Trainwithshubham / Docker-in-one -shot
+- project location : / Documents/Git/django-notes-app
+
+# Understand the structure of the project
+
+- For Nginx the dockerfile for it is mentioned in ./Nginx folder itself 
+- default.conf is also mentioned in ./Nginx folder to understand it google it how it is written and try to understand it
+- Frontent of the application is already built in the mynotes/ folder 
+- Backend is in notesapp/ folder
+- .env which contains database variables
+
+# Docker compose file for the project will be
+
+version: "3.8"
+
+services:
+  nginx:
+    build: ./nginx
+    image: nginx
+    container_name: "nginx_cont"
+    ports:
+      - "80:80"
+    restart: always
+    depends_on:
+      - django_app
+    networks:
+      - notes-app-nw
+
+  django_app:
+    build:
+      context: .
+    image: django_app
+    container_name: "django_cont"
+    ports:
+      - "8000:8000"
+    command: sh -c "python manage.py migrate --noinput && gunicorn notesapp.wsgi --bind 0.0.0.0:8000"
+    env_file:
+      - ".env"
+    depends_on:
+      - db
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/admin || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - notes-app-nw
+
+  db:
+    image: mysql
+    container_name: "db_cont"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=test_db
+    volumes:
+      - ./data/mysql/db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - notes-app-nw
+
+networks:
+  notes-app-nw:
+
+volumes:
+	db:
+
+### Dont forget create network in advance before running docker-compose file
+
+docker network create notes-app-nw -d bridge
+
+
+docker cp C:\Users\shubhamg\Documents\Git\django-notes-app 4515dedb65bc:/var/jenkins_home/workspace/demo/

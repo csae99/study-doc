@@ -1,0 +1,270 @@
+Run a PHP APPLICATION from Local Machine
+---
+Pre-Requisite
+
+Pre-requisites for PHP Project with Docker & Jenkins CI/CD:
+1. PHP Project:
+Docker: For creating containers.
+
+Docker Compose: For managing PHP app and database containers.
+
+PHP: Development environment (PHP, Composer).
+
+MySQL: Dockerized database (if needed).
+
+IDE: Visual Studio Code or PHPStorm.
+
+2. Jenkins CI/CD:
+Jenkins: Installed and running.
+
+Docker Plugin: For Jenkins to run Docker containers.
+
+Pipeline Plugin: For Jenkins pipelines.
+
+Git Plugin: For Git repository integration.
+
+Credentials: For Docker registry and Git.
+
+Jenkins Agent: With Docker support to handle builds.
+---
+DockerFile for PHP application
+
+# Use the official PHP image with Apache support
+FROM php:7.4-apache
+
+# Enable Apache mod_rewrite (needed for most PHP apps, including CMSs like WordPress)
+RUN a2enmod rewrite
+
+# Install necessary PHP extensions (adjust based on your needs)
+RUN docker-php-ext-install pdo pdo_mysql
+
+# Set the working directory inside the container
+WORKDIR /var/www/html
+
+# Copy the PHP application files into the container (from your local machine)
+COPY . .
+
+# Expose port 80 so the web server can be accessed
+EXPOSE 80
+
+
+---
+
+docker-compose.yml
+
+version: '3.8'
+
+services:
+  # PHP + Apache service
+  web:
+    build: .
+    container_name: php-apache
+    ports:
+      - "80:80"  # Map port 80 of the container to port 80 on the host machine
+    volumes:
+      - .:/var/www/html  # Mount the current directory to /var/www/html inside the container
+    networks:
+      - app-network
+    depends_on:
+      - db  # Wait for the database to be available
+
+  # MySQL service
+  db:
+    image: mysql:5.7
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: example  # Set root password for MySQL
+      MYSQL_DATABASE: mydb          # Create a database (replace with your desired DB name)
+      MYSQL_USER: user              # Create a user (replace with your username)
+      MYSQL_PASSWORD: password      # Set a password for the user (replace with your password)
+    ports:
+      - "3306:3306"  # Expose MySQL port
+    volumes:
+      - db-data:/var/lib/mysql  # Use a Docker volume to persist MySQL data
+    networks:
+      - app-network
+
+volumes:
+  db-data:
+
+networks:
+  app-network:
+    driver: bridge
+
+---
+
+Setup of project structure
+
+/my-project
+    ├── Dockerfile
+    ├── docker-compose.yml
+    ├── index.php
+    ├── /assets
+    ├── /css
+    ├── /images
+    └── /js
+	└── /Database
+
+---
+
+docker-compose up --build
+
+---
+
+Example of Php file
+
+<?php
+$servername = "db";  // 'db' is the service name from docker-compose.yml
+$username = "user";   // MySQL user
+$password = "password";  // MySQL password
+$dbname = "mydb";     // Database name
+
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
+
+// Check connection
+if ($conn->connect_error) {
+    die("Connection failed: " . $conn->connect_error);
+}
+echo "Connected successfully";
+?>
+
+
+---
+
+Now you upload above to Git and Jenkins to do CI/CD
+
+Checkout code: Pull the code from the Git repository.
+
+Build Docker Image: Use Docker to build the image based on your Dockerfile.
+
+Run Docker Containers: Use Docker Compose to run the containers for PHP and MySQL.
+
+Test (optional): You may want to add test stages to check your application, e.g., running PHPUnit tests or other scripts.
+
+Push Docker Image to Docker Hub or a Registry: If you plan to push the image to a Docker registry (like Docker Hub or AWS ECR), you'll need to authenticate 
+                                               and push the image.
+
+Deploy: After the build and tests are successful, deploy your app.
+
+Configure webhook on both Git and Jenkins
+
+---
+
+Setting Up Jenkins:
+
+Jenkins Plugins:
+
+Docker Plugin: Allows Jenkins to run Docker commands.
+
+Pipeline Plugin: Essential for running declarative pipelines in Jenkins.
+
+Docker Pipeline Plugin: If you plan to manage Docker containers from Jenkins, this is needed.
+
+Jenkins Credentials:
+
+Store your Docker registry credentials in Jenkins (e.g., docker-credentials), so you can log into your Docker registry securely.
+
+Configure Jenkinsfile in your Repository:
+
+Push the Jenkinsfile to the root of your Git repository.
+
+Jenkins will automatically detect the Jenkinsfile when you set up a Jenkins pipeline project pointing to the Git repository.
+
+---
+
+JenkinsFile for the CI/CD
+
+pipeline {
+    agent any  // This means Jenkins will run the pipeline on any available agent
+
+    environment {
+        // You can define environment variables here if needed
+        DOCKER_IMAGE = "my-docker-image"  // Name of your Docker image
+        DOCKER_REGISTRY = "docker.io"    // Replace with your Docker registry if needed
+        REGISTRY_CREDENTIALS = "docker-credentials"  // Jenkins credentials for Docker registry
+        MYSQL_PASSWORD = "password"  // MySQL password for the db container (can also be securely stored in Jenkins)
+    }
+
+    stages {
+        // Checkout the code from Git repository
+        stage('Checkout') {
+            steps {
+                checkout scm  // This checks out the code from your Git repository
+            }
+        }
+
+        // Build the Docker image
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build Docker image from the Dockerfile
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                }
+            }
+        }
+
+        // Run the containers using Docker Compose (build and start the containers)
+        stage('Run Containers') {
+            steps {
+                script {
+                    // Use Docker Compose to build and start the containers
+                    sh 'docker-compose up -d --build'
+                }
+            }
+        }
+
+        // Optional: Test your application (e.g., run PHPUnit tests or any custom test script)
+        stage('Test') {
+            steps {
+                script {
+                    // Run any tests you want, for example, running PHPUnit tests
+                    // You can configure this to match your test framework
+                    sh 'docker exec php-apache php /var/www/html/vendor/bin/phpunit tests'
+                }
+            }
+        }
+
+        // Push Docker Image to Docker Registry (e.g., Docker Hub)
+        stage('Push Docker Image') {
+            when {
+                branch 'main'  // Only push the Docker image when on the main branch
+            }
+            steps {
+                script {
+                    // Log in to Docker registry
+                    withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin ${DOCKER_REGISTRY}"
+                    }
+
+                    // Tag and push the image
+                    sh "docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest"
+                    sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest"
+                }
+            }
+        }
+
+        // Optional: Deploy your application
+        stage('Deploy') {
+            steps {
+                script {
+                    // Deploy your app (this will depend on your specific deployment strategy)
+                    // For example, you could use Docker commands, or copy files to a server, etc.
+                    // Here's an example of restarting the container in a production environment
+                    sh 'docker-compose down && docker-compose up -d'
+                }
+            }
+        }
+    }
+
+    post {
+        // Cleanup and notifications (optional)
+        always {
+            // You can add any cleanup steps or notifications here
+            // For example, sending an email or Slack notification if something goes wrong
+            sh 'docker-compose down'
+        }
+    }
+}
+
+---

@@ -1,0 +1,260 @@
+Run a ASP.NET Applicatiion using Dockerfile , Docker Compose and Jenkins
+
+---
+  
+
+1. ASP.NET Core Project:
+.NET SDK: To build and run ASP.NET Core apps.
+
+Docker: For creating containers.
+
+Docker Compose: To manage multi-container setups (e.g., app and database).
+
+IDE: Visual Studio or Visual Studio Code.
+
+Test Framework: xUnit or NUnit for unit/integration tests.
+
+SQL Server (optional): If using a database container.
+
+2. Jenkins CI/CD:
+Jenkins: Installed and running.
+
+Docker Plugin: For Jenkins to manage Docker containers.
+
+Pipeline Plugin: To create and run Jenkins pipelines.
+
+Git Plugin: To integrate with Git repositories.
+
+Credentials: For Docker registry and Git.
+
+Jenkins Agent: With Docker and .NET SDK installed for builds.
+
+---
+Create a Dockerfile for ASP.NET Core
+
+# Use the official .NET SDK image to build the app
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build
+
+# Set the working directory inside the container
+WORKDIR /src
+
+# Copy the CSPROJ and restore any dependencies (via `dotnet restore`)
+COPY ["MyApp/MyApp.csproj", "MyApp/"]
+RUN dotnet restore "MyApp/MyApp.csproj"
+
+# Copy the remaining application code
+COPY . .
+
+# Build the app
+WORKDIR /src/MyApp
+RUN dotnet publish "MyApp.csproj" -c Release -o /app/publish
+
+# Use the official .NET runtime image to run the app
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+# Copy the published app from the build container
+COPY --from=build /app/publish .
+
+# Set the entry point to run the app
+ENTRYPOINT ["dotnet", "MyApp.dll"]
+
+
+---
+
+Explanation of Dockerfile:
+FROM mcr.microsoft.com/dotnet/sdk:7.0 AS build: This uses the .NET SDK image for the build phase. This image includes the .NET SDK and other tools necessary to compile and publish your app.
+
+COPY and RUN dotnet restore: This copies the .csproj file and restores dependencies.
+
+RUN dotnet publish: Builds and publishes the application to a folder (/app/publish).
+
+FROM mcr.microsoft.com/dotnet/aspnet:7.0 AS base: This uses a runtime-only image that’s optimized for running .NET Core apps.
+
+ENTRYPOINT ["dotnet", "MyApp.dll"]: Defines the default command to run the application in the container.
+
+---
+
+Docker Compose 
+
+docker-compose.yml
+
+version: '3.8'
+
+services:
+  # ASP.NET Core application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aspnet-core-app
+    ports:
+      - "80:80"  # Map port 80 of the container to port 80 on the host
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+  # Database service (e.g., SQL Server)
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sql-server
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=YourPassword123
+    ports:
+      - "1433:1433"
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+---
+
+Project Structure
+
+/MyApp                  # Root directory of your project
+│
+├── Dockerfile           # Dockerfile for building and running the ASP.NET Core app
+├── docker-compose.yml   # Docker Compose file to manage services (e.g., ASP.NET Core and DB)
+├── Jenkinsfile           # Jenkins pipeline configuration file
+├── /MyApp               # Folder containing the ASP.NET Core project files
+│   ├── MyApp.csproj      # ASP.NET Core project file
+│   ├── /Controllers     # Folder for your API controllers
+│   ├── /Models          # Folder for your models
+│   ├── /Views           # Views for MVC (if using MVC)
+│   ├── /wwwroot         # Static files like CSS, JS, images (if needed)
+│   ├── /Properties      # Properties folder (contains launchSettings.json, etc.)
+│   ├── /Data            # Folder for data access layer (EF Core dbcontext etc.)
+│   ├── /Services        # Folder for your application services
+│   ├── /Tests           # Folder for unit tests or integration tests
+│   ├── appsettings.json # App settings (database connection strings, etc.)
+│   ├── Program.cs       # Entry point for ASP.NET Core application
+│   └── Startup.cs       # Startup configuration (if using older versions of .NET Core)
+│
+└── /MyApp.Tests         # Folder for test projects (unit tests, integration tests)
+    ├── MyApp.Tests.csproj # Test project file
+    ├── /UnitTests        # Unit tests for different parts of the app
+    └── /IntegrationTests # Integration tests for APIs or databases
+
+
+---
+Set up Jenkins
+
+To make this work, you'll need:
+
+Jenkins Plugins:
+
+Docker Plugin: Allows Jenkins to run Docker commands.
+
+Pipeline Plugin: Essential for running declarative pipelines.
+
+Docker Pipeline Plugin: Helps manage Docker containers within Jenkins.
+
+Jenkins Credentials:
+
+Store your Docker registry credentials in Jenkins (e.g., docker-credentials) securely.
+
+Jenkins Job Setup:
+
+Create a Jenkins pipeline job and link it to your Git repository.
+
+Jenkins will automatically detect the Jenkinsfile from the repository and use it to define the build process.
+
+---
+
+Jenkinsfile for CI/CD
+
+
+pipeline {
+    agent any  // Jenkins will run the pipeline on any available agent
+
+    environment {
+        DOCKER_IMAGE = "aspnet-core-app"  // Name of your Docker image
+        DOCKER_REGISTRY = "docker.io"     // Docker registry (adjust as needed)
+        REGISTRY_CREDENTIALS = "docker-credentials"  // Jenkins credentials for Docker registry
+        MYSQL_PASSWORD = "YourPassword123"  // MySQL password (if used in the app)
+        ASPNETCORE_ENVIRONMENT = "Development" // Set environment to Development or Production as needed
+    }
+
+    stages {
+        // Checkout the code from Git repository
+        stage('Checkout') {
+            steps {
+                checkout scm  // Checks out the code from your Git repository
+            }
+        }
+
+        // Build the Docker image
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    // Build Docker image from the Dockerfile
+                    sh 'docker build -t ${DOCKER_IMAGE} .'
+                }
+            }
+        }
+
+        // Run the containers using Docker Compose (build and start the containers)
+        stage('Run Containers') {
+            steps {
+                script {
+                    // Use Docker Compose to build and run the containers
+                    sh 'docker-compose up -d --build'
+                }
+            }
+        }
+
+        // Run Tests (Unit Tests, Integration Tests, etc.)
+        stage('Test') {
+            steps {
+                script {
+                    // Run tests inside the container (e.g., dotnet test)
+                    sh 'docker exec aspnet-core-app dotnet test MyApp.Tests/MyApp.Tests.csproj'
+                }
+            }
+        }
+
+        // Push Docker Image to Docker Registry
+        stage('Push Docker Image') {
+            when {
+                branch 'main'  // Only push the Docker image when on the main branch
+            }
+            steps {
+                script {
+                    // Log in to Docker registry
+                    withCredentials([usernamePassword(credentialsId: REGISTRY_CREDENTIALS, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin ${DOCKER_REGISTRY}"
+                    }
+
+                    // Tag and push the image
+                    sh "docker tag ${DOCKER_IMAGE} ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest"
+                    sh "docker push ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:latest"
+                }
+            }
+        }
+
+        // Deploy (if applicable)
+        stage('Deploy') {
+            steps {
+                script {
+                    // Deploy your app (customize based on your deployment strategy)
+                    // For example, redeploying containers on production
+                    sh 'docker-compose down && docker-compose up -d'
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Clean up after the pipeline runs (stop containers if needed)
+            sh 'docker-compose down'
+        }
+    }
+}
+
+---

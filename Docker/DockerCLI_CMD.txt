@@ -1,0 +1,270 @@
+Docker CLI Command
+
+ 1. Docker Setup and Images Management
+
+ Build a Docker Image
+```bash
+docker build -t <image_name>:<tag> <path_to_dockerfile>
+ Example: docker build -t myapp:v1 .
+```
+
+ List Docker Images
+```bash
+docker images
+ or
+docker image ls
+```
+
+ Pull Docker Image from Registry (Docker Hub, etc.)
+```bash
+docker pull <image_name>:<tag>
+ Example: docker pull ubuntu:latest
+```
+
+ Tag Docker Image
+```bash
+docker tag <existing_image> <new_image>:<tag>
+ Example: docker tag ubuntu:latest myrepo/ubuntu:v1
+```
+
+ Remove Docker Image
+```bash
+docker rmi <image_name>:<tag>
+ Example: docker rmi ubuntu:latest
+```
+
+ Remove All Untagged/Dangling Images
+```bash
+docker image prune
+```
+
+ Remove All Unused Docker Images
+```bash
+docker image prune -a
+```
+
+ 2. Containers Management
+
+ Run a Docker Container
+```bash
+docker run -d -p <host_port>:<container_port> --name <container_name> <image_name>:<tag>
+ Example: docker run -d -p 8080:80 --name mycontainer nginx:latest
+```
+
+ Run a Docker Container in Interactive Mode
+```bash
+docker run -it <image_name>:<tag> /bin/bash
+ Example: docker run -it ubuntu:latest /bin/bash
+```
+
+ List Running Containers
+```bash
+docker ps
+ or
+docker container ls
+```
+
+ List All Containers (including stopped ones)
+```bash
+docker ps -a
+ or
+docker container ls -a
+```
+
+ Start a Stopped Container
+```bash
+docker start <container_name_or_id>
+ Example: docker start mycontainer
+```
+
+ Stop a Running Container
+```bash
+docker stop <container_name_or_id>
+ Example: docker stop mycontainer
+```
+
+ Pause a Running Container
+```bash
+docker pause <container_name_or_id>
+```
+
+ Unpause a Paused Container
+```bash
+docker unpause <container_name_or_id>
+```
+
+ Remove (Delete) a Stopped Container
+```bash
+docker rm <container_name_or_id>
+ Example: docker rm mycontainer
+```
+
+ Remove All Stopped Containers
+```bash
+docker container prune
+```
+
+ View Logs of a Container
+```bash
+docker logs <container_name_or_id>
+```
+
+ Exec into a Running Container
+```bash
+docker exec -it <container_name_or_id> /bin/bash
+ Example: docker exec -it mycontainer /bin/bash
+```
+
+ 3. Networks Management
+
+ Create a Custom Docker Network
+```bash
+docker network create <network_name>
+ Example: docker network create mynetwork
+```
+
+ List Docker Networks
+```bash
+docker network ls
+```
+
+ Inspect a Docker Network
+```bash
+docker network inspect <network_name>
+```
+
+ Remove a Docker Network
+```bash
+docker network rm <network_name>
+```
+
+ Remove Unused Networks
+```bash
+docker network prune
+```
+
+ 4. Volumes Management
+
+ Create a Docker Volume
+```bash
+docker volume create <volume_name>
+ Example: docker volume create myvolume
+```
+
+ List Docker Volumes
+```bash
+docker volume ls
+```
+
+ Inspect a Docker Volume
+```bash
+docker volume inspect <volume_name>
+```
+
+ Remove a Docker Volume
+```bash
+docker volume rm <volume_name>
+```
+
+ Remove All Unused Volumes
+```bash
+docker volume prune
+```
+
+ 5. Docker System Cleanup
+
+ Remove All Stopped Containers, Unused Networks, Unused Volumes, and Dangling Images
+```bash
+docker system prune
+```
+
+ Remove All Docker Resources (Containers, Networks, Volumes, and Images)
+```bash
+docker system prune -a
+```
+
+ Force Clean-Up of Everything (including volumes)
+```bash
+docker system prune -a --volumes
+```
+
+ 6. Docker Compose Commands (If Using Docker Compose)
+
+ Start Services Defined in `docker-compose.yml`
+```bash
+docker-compose up
+```
+
+ Start Services in Detached Mode
+```bash
+docker-compose up -d
+```
+
+ Stop Services
+```bash
+docker-compose down
+```
+
+ Stop and Remove Containers, Networks, and Volumes
+```bash
+docker-compose down --volumes
+```
+
+ List Running Compose Containers
+```bash
+docker-compose ps
+```
+
+ Build Docker Compose Services
+```bash
+docker-compose build
+```
+
+ View Logs for Docker Compose
+```bash
+docker-compose logs
+```
+
+ 7. Docker Images and Containers Stats
+
+ Get the Resource Usage Stats for Running Containers
+```bash
+docker stats
+```
+
+ Inspect a Docker Container
+```bash
+docker inspect <container_name_or_id>
+```
+
+ 8. Docker System Information
+
+ Get Docker System Information
+```bash
+docker info
+```
+
+ Get Docker Version
+```bash
+docker version
+```
+
+ Summary of Key Commands:
+
+| Action                                    | Command                                            |
+|-------------------------------------------|----------------------------------------------------|
+| Build Image                               | `docker build -t <name>:<tag> .`                   |
+| List Images                               | `docker images`                                    |
+| Pull Image                                | `docker pull <image_name>:<tag>`                   |
+| Remove Image                              | `docker rmi <image_name>`                          |
+| List Containers                           | `docker ps`                                        |
+| Run Container                             | `docker run -d -p <host_port>:<container_port>`    |
+| Stop Container                            | `docker stop <container_id>`                       |
+| Remove Container                          | `docker rm <container_id>`                         |
+| List Networks                             | `docker network ls`                                |
+| Create Network                            | `docker network create <network_name>`             |
+| Remove Network                            | `docker network rm <network_name>`                 |
+| List Volumes                              | `docker volume ls`                                 |
+| Create Volume                             | `docker volume create <volume_name>`               |
+| Clean Up Unused Resources (All)           | `docker system prune -a`                           |
+

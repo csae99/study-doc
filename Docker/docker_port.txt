@@ -1,0 +1,153 @@
+In Docker, there isn't a default port for every application, but many popular applications and services have standard default ports that are commonly used. Here is a list of some common applications and their default ports that are typically used when running them in Docker containers:
+
+ Common Applications and Their Default Ports
+
+1. MySQL / MariaDB
+   - Default Port: `3306`
+   - Usage: Used for MySQL database service.
+
+2. PostgreSQL
+   - Default Port: `5432`
+   - Usage: Used for PostgreSQL database service.
+
+3. Redis
+   - Default Port: `6379`
+   - Usage: Used for Redis data store.
+
+4. MongoDB
+   - Default Port: `27017`
+   - Usage: Used for MongoDB database service.
+
+5. Nginx
+   - Default Port: `80` (HTTP) / `443` (HTTPS)
+   - Usage: Web server and reverse proxy.
+
+6. Apache HTTP Server
+   - Default Port: `80` (HTTP) / `443` (HTTPS)
+   - Usage: Web server.
+
+7. Node.js (Express, etc.)
+   - Default Port: `3000`
+   - Usage: Default for most Node.js applications, can vary.
+
+8. Docker Registry (private registry)
+   - Default Port: `5000`
+   - Usage: Docker registry for storing Docker images.
+
+9. Jenkins
+   - Default Port: `8080`
+   - Usage: Jenkins CI/CD server.
+
+10. Tomcat
+    - Default Port: `8080`
+    - Usage: Apache Tomcat application server.
+
+11. GitLab
+    - Default Port: `80` (HTTP) / `443` (HTTPS)
+    - Usage: GitLab CI/CD server.
+
+12. WordPress (via Docker Compose)
+    - Default Port: `80` (HTTP)
+    - Usage: WordPress web application.
+
+13. Elasticsearch
+    - Default Port: `9200`
+    - Usage: HTTP REST API for Elasticsearch.
+
+14. Kibana (for Elasticsearch visualization)
+    - Default Port: `5601`
+    - Usage: Visualization for Elasticsearch data.
+
+15. Flask (Python web framework)
+    - Default Port: `5000`
+    - Usage: Default for Flask web applications.
+
+16. RabbitMQ
+    - Default Port: `5672`
+    - Usage: RabbitMQ message broker.
+
+17. VNC (Virtual Network Computing)
+    - Default Port: `5900`
+    - Usage: Used for remote desktop sessions.
+
+18. Mongo Express
+    - Default Port: `8081`
+    - Usage: MongoDB web-based admin tool.
+
+19. Prometheus
+    - Default Port: `9090`
+    - Usage: Monitoring and alerting toolkit.
+
+20. Grafana
+    - Default Port: `3000`
+    - Usage: Visualization tool for monitoring.
+
+21. Minio
+    - Default Port: `9000`
+    - Usage: Object storage compatible with AWS S3.
+
+22. Airflow (Apache Airflow)
+    - Default Port: `8080`
+    - Usage: Workflow orchestration platform.
+
+23. PHP-FPM (PHP FastCGI Process Manager)
+    - Default Port: `9000`
+    - Usage: Serves PHP requests.
+
+24. Consul
+    - Default Port: `8500`
+    - Usage: HashiCorp Consul for service discovery and configuration.
+
+25. Cassandra
+    - Default Port: `9042`
+    - Usage: Cassandra NoSQL database service.
+
+26. Fluentd
+    - Default Port: `24224`
+    - Usage: Data collection for logs.
+
+27. Zookeeper
+    - Default Port: `2181`
+    - Usage: Apache Zookeeper distributed coordination service.
+
+28. Varnish Cache
+    - Default Port: `80`
+    - Usage: HTTP accelerator, often used in front of web servers.
+
+29. Selenium
+    - Default Port: `4444`
+    - Usage: Selenium WebDriver.
+
+30. Kubernetes Dashboard
+    - Default Port: `8001`
+    - Usage: Web UI for Kubernetes cluster management.
+
+31. SMTP (Mail Server)
+    - Default Port: `25` (SMTP), `587` (SMTP over TLS), `465` (SMTP over SSL)
+    - Usage: Email server protocols.
+
+32. FTP Server
+    - Default Port: `21`
+    - Usage: FTP file transfer protocol.
+
+33. VNC Server
+    - Default Port: `5900`
+    - Usage: Virtual Network Computing (VNC) for remote desktop.
+
+34. MikroTik RouterOS (for RouterOS usage)
+    - Default Port: `8728` (API)
+    - Usage: RouterOS management API.
+
+35. Redis Commander (GUI for Redis)
+    - Default Port: `8081`
+    - Usage: Web interface for managing Redis data.
+
+36. Postfix (Mail Server)
+    - Default Port: `25` (SMTP)
+    - Usage: SMTP protocol for sending emails.
+
+37. TeamCity (CI/CD tool)
+    - Default Port: `8111`
+    - Usage: TeamCity CI server.
+
+---

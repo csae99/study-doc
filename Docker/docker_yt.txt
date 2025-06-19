@@ -1,0 +1,253 @@
+Docker (YT : trainwithshubham:Docker-in-one-shot)
+
+# Pull a base image which gives all required tool and lib
+FROM openjdk:17-jdk-alpine
+
+# Create a folder where the code will be stored
+WORKDIR /app
+
+#Copy the source code from your host machine to container
+COPY . .  
+
+#Compile the application code
+RUN javac src/Main.java
+
+# run the application (It can be overwritten by Docker run)
+CMD ["java","Main"]
+
+# But if we mention Entrypoint it cant be overwritten
+
+---
+# To build the image from dockerfile ( . represent current directory)
+
+docker build -t java-app .
+
+docker run java-app
+
+# If made changes in project and want it to reflect in image then you have to update the image to do that
+
+docker build -t java-app .
+
+
+----------
+# Same can be done for python
+# Python docker file
+---
+
+FROM python:3.7
+
+WORKDIR /app
+
+COPY . .
+
+RUN pip install -r requirements.txt
+
+# CMD ["python","run.py"] (can be over written)
+
+ENTRYPOINT ["python","run.py"]
+
+---
+docker build -t python-flask .
+
+docker run -p 80:80 -d  python-flask
+
+docker logs "container_id" ( to check logs)
+
+docker attach "container_id" ( to see logs in real time) 
+
+docker stop "container_id"
+
+# If you want see what happening in container and enter bash of it
+
+docker exec -it "container_id" bash 
+
+use "exit" to exit the bash
+
+# if you want your container to be always running in interactive mode 
+
+docker run -itd ubuntu
+
+# To connect or be able to make two containers make interact with each other You need to create a network
+
+docker network create my-network -d bridge (-d is used to mention driver , there are 7 types refer to Docker_network.txt)
+---
+# Example to connect two tier app using flask and mysql (dockerfile in Git/Two-tier-flask)
+
+docker build -t two-tier-backend .
+
+docker create network two-tier -d bridge
+
+docker run -d --name mysql --network two-tier -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=Devops mysql
+
+docker run -d --name two-tier-backend --network two-tier -p 5000:5000 -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=Devops two-tier-backend:latest
+
+docker logs "container_id" (to verify if the container is running)
+
+docker network inspect two-tier (shows the container running in the network)
+
+---
+ # If somehow you restart your container or loss the container then the data in it will be lost to over come that we use docker volume
+
+docker volume create mysql-data
+
+docker inspect mysql-data (to know where the volume is mounted) 
+
+# to bind the volume with database
+
+docker run -d --name mysql --network two-tier -v mysql-data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=Devops mysql
+
+# if you want to store data at custom path or location
+
+docker run -d --name mysql --network two-tier -v /home/ubuntu/volumes/mysql-data:/var/lib/mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=Devops mysql
+
+# To automete the processes you can use docker-compose
+
+docker-compose.yml
+
+version: "3.8"
+
+services:
+  container_name: mysql	
+  mysql:
+     image: mysql
+	 enviroment:
+	     MYSQL_DATABASE:"devops"
+		 MYSQL_ROOT_PASSWORD:"root"
+	 ports:
+		 - "3306:3306" 
+	 volumes:
+	     - mysql-data:/var/lib/mysql
+	 networks:
+         - two-tier
+	 restart: always	 
+  
+	 healthcheck:
+		 test: ["CMD", "mysqladmin","ping","-h","localhost","-uroot","-proot"](username and password can vary)
+		 interval:10s
+		 timeout: 5s
+		 retries: 5
+		 start_period: 60s
+	 
+  flask:
+	 build:
+		context: .
+     container_name: two-tier-backend
+	 ports:
+		 -"5000:5000"
+	 enviroment:
+		MYSQL_HOST: mysql
+		MYSQL_USER: root
+		MYSQL_PASSWORD: root
+		MYSQL_DB: devops
+	 networks:
+		- two-tier
+	 depends_on:
+		- mysql
+	 restart: always	
+	 healthcheck:
+		 test: ["CMD-SHELL","curl -f http://localhost:5000/health || exit 1"] (The -f flag tells curl to fail silently,|| exit 1: This part ensures that if the curl command fails ,the command exits with a status code of 1, signaling that the container is unhealthy.)
+		 interval:10s
+		 timeout: 5s
+		 retries: 5
+		 start_period: 60s	
+ 
+ volumes:
+	mysql-data:
+  
+networks:
+	two-tier:
+	
+---	
+
+docker-compose up --build
+or
+docker compose up -d
+
+---
+# Docker registry
+
+docker login
+
+# this create another same image with diff name
+
+docker image tag two-tier-backend:latest shubham/two-tier-backend:latest
+
+# Push image to docker registry 
+docker push shubham/two-tier-backend:latest
+
+---
+# Multi-staging and caching in docker : It is done reduce the image size and optmize the container or storage
+
+# ------------------- Stage 1: Build Stage ------------------------------
+FROM python:3.7 AS builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc default-libmysqlclient-dev pkg-config && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# ------------------- Stage 2: Final Stage ------------------------------
+FROM python:3.7-slim
+
+WORKDIR /app
+
+# Install runtime dependencies only
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libmariadb3 && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy dependencies and application code from the builder stage
+COPY --from=builder /usr/local/lib/python3.9/site-packages/ /usr/local/lib/python3.9/site-packages/
+COPY . .
+
+CMD ["python", "app.py"]
+
+
+# size of python:3.7 is 900mb to 1gb and python:3.7-slim is 150mb to 200 mb
+# python 3.7 was only needed to install libraries and we can run the rest of code using python 3.7-slim
+ 
+---
+
+# Monitoring and logging in docker 
+
+docker logs "container_id"
+
+docker logs -f "container_id_or_name"
+
+docker stats
+
+
+
+# to get logs output in seprate file
+
+nohup docker attach "container_id" &
+
+cat nohup.out
+
+# example for nohup :[ docker run -d --name my_container python:3.7 bash -c "nohup python my_script.py &" ]
+
+# Logging in docker compose
+
+version: '3.8'
+services:
+  app:
+    image: my_app_image
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# Also can use third party application for monitoring
+
+---
+
+# Docker container are not directly used in production beacause thers a chance that they will crash
+
+# This is where K8s enters whenthe container crash it auto-heals and auto-sacles the container

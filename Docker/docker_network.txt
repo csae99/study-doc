@@ -1,1 +1,42 @@
 
+Docker provides several types of networks that you can use to control how containers communicate with each other and with the outside world.
+The main types of Docker networks are:
+
+1. Bridge Network:
+   - This is the default network type for containers.
+   - Containers are connected to a private internal network, and they can communicate with each other using their IP addresses.
+   - If containers need to communicate with the outside world, Docker automatically sets up Network Address Translation (NAT).
+   - Typically used for applications that don't need to be exposed to the external network directly.
+   - Example: `docker network create bridge`
+
+2. Host Network:
+   - Containers are directly connected to the host machine’s network stack.
+   - They share the same network interface as the host, which means they can access the host's IP address directly.
+   - There’s no isolation between the container and the host's network, which can be useful for performance reasons in some cases.
+   - Example: `docker network create host`
+
+3. Overlay Network:
+   - Used when you have multiple Docker hosts (for example, in a Docker Swarm or Kubernetes setup).
+   - Allows containers on different hosts to communicate with each other as if they were on the same network.
+   - Useful for multi-host container deployments.
+   - Example: `docker network create -d overlay`
+
+4. None Network:
+   - Containers connected to the `none` network don’t have any network interfaces, meaning they cannot communicate with other containers or external services.
+   - This is useful for situations where network communication isn't needed.
+   - Example: `docker network create none`
+
+5. Macvlan Network:
+   - Allows you to assign a MAC address to a container, making it appear as a physical device on the network.
+   - Containers can have their own IP addresses on the network, separate from the host.
+   - Often used when you need to integrate containers into an existing network, such as with legacy systems that require a unique MAC address.
+    - Example: `docker network create -d macvlan`
+
+6. Gateway Network:
+   - A network that provides gateway functionality and allows communication between containers and external networks, typically used in cloud environments.
+   
+7. Custom Networks:
+   - You can also create custom networks using different drivers (e.g., bridge, overlay, macvlan, etc.), which allow more control over container communication, such as custom DNS settings, security policies, and more.
+   - Example: `docker network create --driver bridge custom-network`
+
+These networks enable various networking models, from simple isolation (bridge) to complex multi-host communication (overlay). You can choose the type based on your use case and network design requirements.

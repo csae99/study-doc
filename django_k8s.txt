@@ -1,0 +1,114 @@
+Django-notes-app with K8S
+
+Github: https://github.com/LondheShubham153/django-notes-app.git
+
+#Clone the repo
+git clone https://github.com/LondheShubham153/django-notes-app.git
+
+cd django-notes-app
+
+#build the image
+docker build-t notes-app-k8s .
+
+# Docker login
+docker login -u [username]
+password: [password or can also use token]
+
+docker tag notes-app-k8s:latest [username]/notes-app-k8s:latest
+
+docker ps
+
+docker push [username]/notes-app-k8s:latest
+
+# Create new dir k8s
+
+mkdir k8s
+
+CD k8s
+
+# deplyment.yaml
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-app-deployment
+  namespace: notes-app
+  labels:
+    app: notes-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: notes-app
+  template:
+    metadata:
+      labels:
+        app: notes-app
+    spec:
+      containers:
+      - name: notes-app
+        image: trainwithshubham/notes-app-k8s
+        ports:
+        - containerPort: 8000
+
+---
+
+# namespace.yaml
+---
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: notes-app
+
+---
+
+# service.yaml
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: notes-app-service
+  namespace: notes-app
+spec:
+  selector:
+    app: notes-app
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
+  type: ClusterIP      
+
+---
+
+kubectl apply -f namespace.yaml
+
+kubectl apply -f deployment.yaml
+
+kubectl apply -f service.yaml
+
+
+kubectl get all -n notes-app
+NAME                                        READY   STATUS    RESTARTS   AGE
+pod/notes-app-deployment-7f8f5bfc9f-9hxqc   1/1     Running   0          2m28s
+pod/notes-app-deployment-7f8f5bfc9f-fx9rs   1/1     Running   0          2m28s
+pod/notes-app-deployment-7f8f5bfc9f-jlw75   1/1     Running   0          2m28s
+
+NAME                        TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)    AGE
+service/notes-app-service   ClusterIP   10.102.125.138   <none>        8000/TCP   61s
+
+NAME                                   READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/notes-app-deployment   3/3     3            3           2m28s
+
+NAME                                              DESIRED   CURRENT   READY   AGE
+replicaset.apps/notes-app-deployment-7f8f5bfc9f   3         3         3       2m28s
+
+ kubectl port-forward service/notes-app-service -n notes-app 8000:8000 --address=0.0.0.0
+Forwarding from 0.0.0.0:8000 -> 8000
+
+curl 10.102.125.138:8000
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><link rel="icon" href="/favicon.ico"/><meta name="viewport" content="width=device-width,
+initial-scale=1"/><meta name="theme-color" content="#000000"/><meta name="description" content="Web site created using create-react-app"/><link rel=
+"apple-touch-icon" href="/logo192.png"/><link rel="manifest" href="/manifest.json"/><title>Notessss APPPPP</title><script defer="defer" src="/static/
+js/main.08442c14.js"></script><link href="/static/css/main.e7772a38.css" rel="stylesheet"></head><body><noscript>You need to enable JavaScript to run
+ this app.</noscript><div id="root"></div></body></html>

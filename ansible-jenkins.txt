@@ -1,0 +1,211 @@
+Ansible-Jenkins project structure
+
+ 📁 Folder Structure
+```
+.
+├── Jenkinsfile
+├── ansible.cfg
+├── inventory.ini
+├── playbook.yml
+├── roles/
+│   ├── webserver/
+│   │   ├── tasks/
+│   │   │   └── main.yml
+│   │   ├── handlers/
+│   │   │   └── main.yml
+│   │   └── defaults/
+│   │       └── main.yml
+└── README.md
+```
+
+1. `Jenkinsfile`
+This file defines the pipeline.
+
+```groovy
+pipeline {
+    agent any
+
+    environment {
+        INVENTORY = 'inventory.ini'
+        PLAYBOOK = 'playbook.yml'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/your-org/your-repo.git'
+            }
+        }
+
+        stage('Run Ansible Playbook') {
+            steps {
+                sshagent (credentials: ['your-ssh-key-id']) {
+                    sh "ansible-playbook -i ${INVENTORY} ${PLAYBOOK}"
+                }
+            }
+        }
+
+        stage('Post-Run Cleanup') {
+            steps {
+                // Clean up or notify here if needed
+            }
+        }
+    }
+
+    post {
+        always {
+            // Add logging, notifications, or other post-pipeline actions
+            echo 'Pipeline complete'
+        }
+    }
+}
+```
+
+> Make sure to replace `your-ssh-key-id` with the SSH key credentials ID added in Jenkins.
+
+---
+
+2. `ansible.cfg`
+This configuration file is used to set up default options for Ansible.
+
+```ini
+[defaults]
+inventory = inventory.ini
+remote_user = ubuntu
+host_key_checking = False
+```
+
+---
+
+3. `inventory.ini`
+This file defines your servers. Replace with your actual server IPs or FQDNs.
+
+```ini
+[webservers]
+192.168.1.10 ansible_user=ubuntu
+
+[dbservers]
+192.168.1.20 ansible_user=ubuntu
+```
+
+> Make sure the `ansible_user` matches the user that can SSH into your servers.
+
+---
+
+4. `playbook.yml`
+The main Ansible playbook to be run.
+
+```yaml
+---
+- name: Deploy Web Server
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Start Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+```
+
+> This example installs and starts Nginx on the target web servers. Modify it according to your needs.
+
+---
+
+5. Role: `roles/webserver/tasks/main.yml`
+In a real-world scenario, you'd split the tasks into roles for modularity. Here's an example task for installing Nginx.
+
+```yaml
+---
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Start Nginx service
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+```
+
+---
+
+6. Role: `roles/webserver/handlers/main.yml`
+Handlers are triggered by tasks (e.g., restarting a service). Here's a simple handler for Nginx restart.
+
+```yaml
+---
+- name: restart nginx
+  service:
+    name: nginx
+    state: restarted
+```
+
+---
+
+7. Role: `roles/webserver/defaults/main.yml`
+This file holds any default values that can be overridden in the playbook.
+
+```yaml
+---
+nginx_package: nginx
+```
+
+---
+
+8. `README.md`
+A quick readme to guide users through the repo.
+
+```markdown
+ Ansible Jenkins Integration Example
+
+This repository demonstrates how to integrate Ansible with Jenkins to automate the configuration and deployment of servers.
+
+ Folder Structure
+
+- `Jenkinsfile` - Defines the Jenkins pipeline for CI/CD.
+- `inventory.ini` - List of servers to manage.
+- `playbook.yml` - Main Ansible playbook to deploy applications.
+- `roles/` - Reusable Ansible roles for tasks like setting up webservers.
+
+ Requirements
+
+1. Jenkins installed and configured with the Ansible plugin.
+2. Ansible installed on the Jenkins server.
+3. SSH access to your target servers.
+
+ How to Use
+
+1. Clone this repo to your Jenkins server.
+2. Create a Jenkins pipeline job.
+3. Point it to the `Jenkinsfile` in this repo.
+4. Add your inventory file, SSH keys, and any other custom configurations.
+5. Run the pipeline!
+
+ License
+
+MIT License
+```
+
+---
+
+Additional Notes:
+
+1. SSH Keys: Ensure you configure SSH keys in Jenkins (through the SSH Agent plugin) for connecting to remote servers.
+2. Security: It's recommended to use Ansible Vault for storing sensitive information like passwords and API keys.
+
+---
+
+Next Steps:
+
+- Push this repo to GitHub (or any other Git repository).
+- In Jenkins, create a Pipeline job, point it to the repository, and run the pipeline.
+- Monitor the output in Jenkins to see the results of the Ansible playbook.

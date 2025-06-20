@@ -1,0 +1,345 @@
+Install docker using Ansible on hosts machine
+
+# Setup ssh connection using sshpass
+---
+ansible@ubuntu-c:~$cat /utils/setup_ssh_keys.sh
+
+- vim /utils/setup_ssh_keys.sh
+---
+#!/bin/bash
+
+# Update system packages
+echo "🔄 Updating system packages..."
+sudo apt update
+echo
+
+# Install sshpass if not already installed
+echo "🔄 Installing sshpass..."
+sudo apt install -y sshpass
+echo
+
+# Create SSH keys, overwriting existing keys without prompting
+echo "🔑 Generating new SSH keys and overwriting old ones..."
+ssh-keygen -t rsa -b 2048 -f ~/.ssh/id_rsa -q -N "" <<< y >/dev/null 2>&1
+echo
+
+# Remove known_hosts file to avoid issues with reused IP addresses
+echo "🔍 Removing known_hosts file..."
+rm -f ~/.ssh/known_hosts
+echo
+
+# Define the password for ssh-copy-id
+PASSWORD='password'
+
+# Define base hosts and number of instances
+HOSTS=(ubuntu centos)
+INSTANCES=(1 2 3)
+USERS=(ansible root)
+
+# Loop through each host and instance combination to copy the SSH key
+for HOST in "${HOSTS[@]}"; do
+    for INSTANCE in "${INSTANCES[@]}"; do
+        for USER in "${USERS[@]}"; do
+            TARGET="$HOST$INSTANCE"
+            echo "Copying SSH key to $USER@$TARGET..."
+            # Use sshpass to pass the password and ssh-copy-id to copy the SSH key
+            sshpass -p "$PASSWORD" ssh-copy-id -o StrictHostKeyChecking=no "$USER@$TARGET"
+            if [ $? -eq 0 ]; then
+                echo " Successfully copied SSH key to $USER@$TARGET"
+            else
+                echo " Failed to copy SSH key to $USER@$TARGET"
+            fi
+            echo
+        done
+    done
+done
+
+echo "🎉 SSH key distribution complete."
+---
+- /utils/setup_ssh_keys.sh
+
+# Make dir "Ansible"
+
+- mkdir ansible
+- cd ansible
+
+# Create "ansible.cfg"
+
+- vim ansible.cfg
+- add following in it 
+---
+[defaults]
+inventory = hosts
+host_key_checking = False
+---
+
+# create "inventory.ini"
+
+- vin inventory.ini
+- add foolowing in it
+
+---
+[control]
+ubuntu-c ansible_connection=local
+
+[centos]
+centos1 ansible_port=2222
+centos[2:3]
+
+[centos:vars]
+ansible_user=root
+
+[ubuntu]
+ubuntu[1:3]
+
+[ubuntu:vars]
+ansible_become=true
+ansible_become_pass=password
+
+[linux:children]
+centos
+ubuntu
+
+---
+
+# create playbook to install docker "install-docker.yml"
+
+- vim install-docker.yaml
+- add following to it
+
+---
+- name: Install Docker on Ubuntu Machines
+  hosts: ubuntu
+  become: yes
+  tasks:
+    - name: Install prerequisites
+      apt:
+        name: "{{ item }}"
+        state: present
+        update_cache: yes
+      loop:
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - gnupg-agent
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt and install Docker
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: latest
+        update_cache: yes
+
+    - name: Ensure Docker is running
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+# Command to run the playbook
+
+- ansible-playbook -i inventory.ini install-docker.yml
+
+ansible@ubuntu-c:~/ansible$ ansible-playbook -i inventory.ini install-docker.yml
+
+PLAY [Install Docker on Ubuntu Machines] ************************************************************************************************************************************
+
+TASK [Gathering Facts] ******************************************************************************************************************************************************
+ok: [ubuntu2]
+ok: [ubuntu3]
+ok: [ubuntu1]
+
+TASK [Install prerequisites] ************************************************************************************************************************************************
+changed: [ubuntu3] => (item=apt-transport-https)
+changed: [ubuntu1] => (item=apt-transport-https)
+changed: [ubuntu2] => (item=apt-transport-https)
+ok: [ubuntu2] => (item=ca-certificates)
+ok: [ubuntu3] => (item=ca-certificates)
+ok: [ubuntu1] => (item=ca-certificates)
+changed: [ubuntu2] => (item=curl)
+changed: [ubuntu1] => (item=curl)
+changed: [ubuntu3] => (item=curl)
+changed: [ubuntu1] => (item=software-properties-common)
+changed: [ubuntu3] => (item=software-properties-common)
+changed: [ubuntu2] => (item=software-properties-common)
+changed: [ubuntu1] => (item=gnupg-agent)
+changed: [ubuntu3] => (item=gnupg-agent)
+changed: [ubuntu2] => (item=gnupg-agent)
+
+TASK [Add Docker GPG key] ***************************************************************************************************************************************************
+changed: [ubuntu3]
+changed: [ubuntu2]
+changed: [ubuntu1]
+
+TASK [Add Docker APT repository] ********************************************************************************************************************************************
+changed: [ubuntu1]
+changed: [ubuntu3]
+changed: [ubuntu2]
+
+TASK [Update apt and install Docker] ****************************************************************************************************************************************
+changed: [ubuntu3]
+changed: [ubuntu1]
+changed: [ubuntu2]
+
+TASK [Ensure Docker is running] *********************************************************************************************************************************************
+changed: [ubuntu1]
+changed: [ubuntu3]
+changed: [ubuntu2]
+
+PLAY RECAP ******************************************************************************************************************************************************************
+ubuntu1                    : ok=6    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ubuntu2                    : ok=6    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0   
+ubuntu3                    : ok=6    changed=5    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+
+
+# Output
+
+root@ubuntu1:~# docker --version
+Docker version 28.0.4, build b8034c0
+
+root@ubuntu2:~# docker --version
+Docker version 28.0.4, build b8034c0
+
+root@ubuntu3:~# docker --version
+Docker version 28.0.4, build b8034c0
+---
+# Uninstall docker on ubuntu
+
+- vim uninstall-docker.yml
+
+---
+- name: Uninstall Docker from Ubuntu Machines
+  hosts: ubuntu
+  become: yes
+  tasks:
+
+    - name: Stop Docker service
+      service:
+        name: docker
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+        state: absent
+        purge: yes
+        autoremove: yes
+        update_cache: yes
+
+    - name: Remove Docker APT repository
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: absent
+
+    - name: Remove Docker GPG key
+      apt_key:
+        id: 0EBFCD88
+        state: absent
+      ignore_errors: yes
+
+    - name: Remove Docker directories
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/docker
+        - /var/lib/docker
+        - /var/lib/containerd
+		
+		
+# Command to run the playbook
+
+- ansible-playbook -i inventory.ini install-docker.yml
+
+
+### Install docker on both centos and ubuntu
+
+---
+- name: Install Docker on Linux Hosts
+  hosts: linux
+  become: true
+
+  vars:
+    docker_packages_ubuntu:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - software-properties-common
+    docker_packages_centos:
+      - yum-utils
+      - device-mapper-persistent-data
+      - lvm2
+
+  tasks:
+
+    - name: Install prerequisites on Ubuntu
+      apt:
+        name: "{{ docker_packages_ubuntu }}"
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker GPG key on Ubuntu
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Add Docker repo on Ubuntu
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Docker on Ubuntu
+      apt:
+        name: docker-ce
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Install prerequisites on CentOS
+      yum:
+        name: "{{ docker_packages_centos }}"
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Add Docker repo on CentOS
+      get_url:
+        url: https://download.docker.com/linux/centos/docker-ce.repo
+        dest: /etc/yum.repos.d/docker-ce.repo
+      when: ansible_os_family == "RedHat"
+
+    - name: Install Docker on CentOS
+      yum:
+        name: docker-ce
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Enable and start Docker service
+      systemd:
+        name: docker
+        enabled: true
+        state: started
+	- name: Add user to docker group
+	  user:
+		name: "{{ ansible_user }}"
+		groups: docker
+		append: yes

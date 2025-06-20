@@ -1,0 +1,153 @@
+AWS Relational Database Service ( RDS )
+
+Amazon Relational Database Service (Amazon RDS) is a web service that makes it easier to set up, operate, and scale a relational database in the AWS Cloud. 
+
+Advantages of Amazon RDS
+
+- Amazon RDS is a managed database service. It's responsible for most management tasks. By eliminating tedious manual processes, Amazon RDS frees you to focus 
+  on your application and your users.
+
+- Amazon RDS provides the following principal advantages over database deployments that aren't fully managed:
+
+	- You can use database engines that you are already familiar with: IBM Db2, MariaDB, Microsoft SQL Server, MySQL, Oracle Database, and PostgreSQL.
+
+	- Amazon RDS manages backups, software patching, automatic failure detection, and recovery.
+
+	- You can turn on automated backups, or manually create your own backup snapshots. You can use these backups to restore a database. The Amazon RDS restore 
+	  process works reliably and efficiently.
+
+	- You can get high availability with a primary DB instance and a synchronous secondary DB instance that you can fail over to when problems occur. You can 
+	  also use read replicas to increase read scaling.
+
+	- In addition to the security in your database package, you can control access by using AWS Identity and Access Management (IAM) to define users and 
+	  permissions. You can also help protect your databases by putting them in a virtual private cloud (VPC)It provides cost-efficient, resizable capacity for 
+	  an industry-standard relational database and manages common database administration tasks.
+
+
+Amazon RDS shared responsibility model
+
+- Amazon RDS is responsible for hosting the software components and infrastructure of DB instances and DB clusters. You are responsible for query tuning, which 
+  is the process of adjusting SQL queries to improve performance. Query performance is highly dependent on database design, data size, data distribution, 
+  application workload, and query patterns,which can vary greatly. Monitoring and tuning are highly individualized processes that you own for your RDS databases.
+  You can use Amazon RDS Performance Insights and other tools to identify problematic queries.
+
+Amazon RDS application architecture: example
+The following image shows a typical use case of a dynamic website that uses Amazon RDS DB instances for database storage:
+
+The primary components of the preceding architecture are as follows:
+
+1. Elastic Load Balancing
+- AWS routes user traffic through Elastic Load Balancing. A load balancer distributes workloads across multiple compute resources, such as virtual servers. 
+  In this sample use case, the Elastic Load Balancer forwards client requests to application servers.
+
+2. Application servers
+- Application servers interact with RDS DB instances. An application server in AWS is typically hosted on EC2 instances, which provide scalable computing
+  capacity. The application servers reside in public subnets with different Availability Zones (AZs) within the same Virtual Private Cloud (VPC). .
+
+3. RDS DB instances
+- The EC2 application servers interact with RDS DB instances. The DB instances reside in private subnets within different Availability Zones (AZs) within the
+  same Virtual Private Cloud (VPC). Because the subnets are private, no requests from the internet are permitted.
+- The primary DB instance replicates to another DB instance, called a read replica. Both DB instances are in private subnets within the VPC, which means that 
+  Internet users can't access them directly.
+
+4. DB engines
+A DB engine is the specific relational database software that runs on your DB instance. Amazon RDS supports the following database engines:
+
+- IBM Db2
+- MariaDB
+- Microsoft SQL Server
+- MySQL
+- Oracle Database
+- PostgreSQL
+
+- Each DB engine has its own supported features, and each version of a DB engine can include specific features. Support for Amazon RDS features varies across AWS 
+  Regions and specific versions of each DB engine. To check feature support in different engine versions and Regions, see Supported features in Amazon RDS by AWS 
+  Region and DB engine.
+
+Additionally, each DB engine has a set of parameters in a DB parameter group that control the behavior of the databases that it manages.
+
+5. DB instance classes
+A DB instance class determines the computation and memory capacity of a DB instance. A DB instance class consists of both the DB instance class type and the 
+size. Amazon RDS supports the following instance class types, where the asterisk (*) represents the generation, optional attribute, and size:
+
+General purpose – db.m*
+
+Memory optimized – db.z*, db.x*, db.r*
+
+Compute optimized – db.c*
+
+Burstable performance – db.t*
+
+Each instance class offers different compute, memory, and storage capabilities. For example, db.m7g is a 7th-generation, general-purpose DB instance class type 
+powered by AWS Graviton3 processors. When you create a DB instance, you specify a DB instance class such as db.m7g.2xlarge, where 2xlarge is the size. 
+
+You can select the DB instance class that best meets your requirements. If your requirements change over time, you can change your DB instance class. 
+For example, you might scale up your db.m7g.2xlarge instance to db.m7g.4xlarge.
+
+6. DB instance storage:
+- Amazon EBS provides durable, block-level storage volumes that you can attach to a running instance. DB instance storage comes in the following types:
+
+General Purpose (SSD):
+This cost-effective storage type is ideal for a broad range of workloads running on medium-sized DB instances. General Purpose storage is best suited for 
+development and testing environments.
+
+Provisioned IOPS (PIOPS):
+This storage type is designed to meet the needs of I/O-intensive workloads, particularly database workloads, that require low I/O latency and consistent I/O 
+throughput. Provisioned IOPS storage is best suited for production environments.
+
+Magnetic:
+Amazon RDS supports magnetic storage for backward compatibility. We recommend that you use General Purpose SSD or Provisioned IOPS SSD for any new storage needs
+
+Steps to successfully create and connect to rds USING AWS CLI OR PUTTY OR MOBAXTREAM
+
+1) Create a security group with access to port 22 and 3306
+2) create a vpc and subnet grps
+3) create database with free tier(no charges) / Production and dev/test (charges incur) 
+4) Select prefered database engine with prefered version
+4) chose db instance class and storage class
+5) Configure the the username and password 
+6) configure other options such as backup ,maintainence etc.
+7) At the preview all the steps and create the database
+8) Next , Go to  EC2 create an instance with same vpc and security group as database
+9) launch the instance and connect to it once ready
+10) Give it Sudo su accsess and install the database engine . For example : " Yum install mysql -y"
+11)Command to connect to rds using aws cli 
+mysql -h endpoint -P 3306 -u admin -p
+
+mysql -h "database-instance.cfjitlrhaxvx.us-east-1.rds.amazonaws.com" -P 3306 -u rdsuser -p
+             RDS ENDPOINT
+			 
+12) provide the password andyou are connected to your database engine
+
+
+RDS Multi-availability zone:
+
+-RDS Access only via database CNAME (canonical name). The CNAME will point at primary instance
+-You cannot access the standby replica for any reason via RDS
+- The standby replica cannot be used for extra capacity .
+- Synchronous Replication 
+- Multi-AZ feature is not free tier , extra infrastructure for standby. Generally twice the price
+- The standby replica cannotbe accessed directly unless a failure occurs
+- same region
+- Backup taken from standby
+- AZ outage , primary failure, manual failover , instance type change and software patching are the reason for downtime or failover
+
+RDS Backup and Restores:
+
+-RPO : recovery point objective
+     - 	time btw the last backup and when the failure occured
+	 - Amount of maximum data loss
+	 - influences technical soln and cost 
+	 - Business usually provides an RPO value
+-RTO : recovery time objective
+     - Time btw the disaster recovery evet and full recovery
+	 - influenced by process,staff, tech and documentation
+
+
+RDS Backup :
+- First snap is FULL size of consumed data
+- manual snapshots will remain in your aws accoony even after the life of snapshot. These needs to be deleted manually
+- AUTOMATIC Snapshots
+- Every 5 mins translation logs are saved to s3 . A database can thenbe restored to a 5 min snapshot in time
+- Automatic cleanups can be anywhere from 0 to 35 days
+- When you delete the database they can be retained but they will expire vas4ed on their retention period.

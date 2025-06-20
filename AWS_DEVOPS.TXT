@@ -1,0 +1,83 @@
+Most commonly used AWS tools in DevOps include:
+
+ 1. AWS CodeCommit
+   - Purpose: A source control service that allows developers to store and manage their code.
+   - Usage: Similar to GitHub, it provides private repositories for code and integrates with other CI/CD tools.
+
+ 2. AWS CodeBuild
+   - Purpose: A fully managed build service to compile source code, run tests, and produce software packages.
+   - Usage: Often used to automate the build process as part of a continuous integration pipeline.
+
+ 3. AWS CodeDeploy
+   - Purpose: A deployment service to automate the deployment of applications to EC2 instances, Lambda functions, and on-premises servers.
+   - Usage: Ensures automated, consistent, and reliable deployments.
+
+ 4. AWS CodePipeline
+   - Purpose: A fully managed continuous integration and continuous delivery (CI/CD) service.
+   - Usage: Automates the steps to build, test, and deploy applications, allowing DevOps teams to focus on writing code rather than manual deployment processes.
+
+ 5. Amazon EC2 (Elastic Compute Cloud)
+   - Purpose: Provides scalable compute capacity in the cloud.
+   - Usage: Commonly used for running applications and microservices, making it a critical part of the infrastructure for DevOps teams.
+
+ 6. Amazon S3 (Simple Storage Service)
+   - Purpose: Object storage for storing and retrieving data.
+   - Usage: Frequently used for storing artifacts, backups, or logs in a DevOps environment.
+
+ 7. AWS CloudFormation
+   - Purpose: A service to define and provision infrastructure as code (IaC).
+   - Usage: Helps automate the deployment of AWS resources (like EC2, RDS, VPC) using JSON or YAML templates.
+
+ 8. Amazon CloudWatch
+   - Purpose: Monitoring service for AWS cloud resources and applications.
+   - Usage: Used to monitor logs, metrics, and set alarms. Vital for observability and performance monitoring in DevOps pipelines.
+
+ 9. AWS Lambda
+   - Purpose: Serverless compute service that runs code in response to events.
+   - Usage: Often used for automation, event-driven architecture, or microservices that don’t require traditional server management.
+
+ 10. Amazon Elastic Container Service (ECS)
+   - Purpose: Managed container service to run Docker containers.
+   - Usage: Popular in DevOps for managing containerized applications and services.
+
+ 11. Amazon Elastic Kubernetes Service (EKS)
+   - Purpose: Managed Kubernetes service for deploying containerized applications.
+   - Usage: A popular choice for DevOps teams using Kubernetes for container orchestration and managing microservices.
+
+ 12. AWS Systems Manager
+   - Purpose: Provides operational insights and management capabilities across AWS resources.
+   - Usage: Helps with automation, patch management, and monitoring of EC2 instances, databases, and other resources.
+
+ 13. Amazon RDS (Relational Database Service)
+   - Purpose: Managed relational database service for applications.
+   - Usage: Common in DevOps pipelines for database management, backups, and scaling.
+
+ 14. AWS IAM (Identity and Access Management)
+   - Purpose: Manages user access and permissions for AWS resources.
+   - Usage: Ensures security by defining roles and policies, helping DevOps teams manage secure access to resources.
+
+ 15. Amazon VPC (Virtual Private Cloud)
+   - Purpose: Creates isolated network environments for AWS resources.
+   - Usage: Used for networking, security, and connectivity between various resources like EC2, databases, and containers.
+
+ 16. AWS Elastic Load Balancing (ELB)
+   - Purpose: Distributes incoming application traffic across multiple targets like EC2 instances or containers.
+   - Usage: Ensures high availability and fault tolerance for applications.
+
+ 17. AWS Auto Scaling
+   - Purpose: Automatically adjusts the number of EC2 instances or other resources based on traffic or load.
+   - Usage: Commonly used to ensure applications can scale to meet demand without manual intervention.
+
+ 18. AWS Secrets Manager
+   - Purpose: Protects and manages secrets like API keys, database credentials, and certificates.
+   - Usage: Helps secure sensitive information and integrates with applications for safe storage.
+
+ 19. AWS CloudTrail
+   - Purpose: Logs and monitors activity in the AWS environment.
+   - Usage: Useful for auditing, troubleshooting, and compliance, as it tracks API calls across AWS services.
+
+ 20. AWS X-Ray
+   - Purpose: Analyzes and debug applications by tracing requests as they travel through the AWS infrastructure.
+   - Usage: Helps diagnose performance bottlenecks, troubleshoot errors, and monitor microservices.
+
+ 

@@ -1,0 +1,37 @@
+Ansible_playbook
+
+1) send email
+---
+---
+- name: Deploy Web Server
+  hosts: ubuntu
+  become: yes
+  tasks:
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+      register: install_apache
+
+    - name: Start Nginx service
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: send mail
+      mail:
+        host: smtp.hostinger.com
+        port: 587
+        username: 
+        password: 
+        from: email@itpanther.com
+        to: vikasjha@mailinator.com
+        subject: "{{ansible_play_name}} has completed"
+        body: "here are the result"
+		attach:
+		  - /tmp/sysinfo.txt
+		  - /tmp/sysinfo
+        secure: starttls
+---

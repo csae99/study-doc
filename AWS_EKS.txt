@@ -1,0 +1,97 @@
+AWS EKS (Elastic Kubernetes Service)
+
+- AWS manages the control panel
+- Provisioning / maintaining master nodes
+- Responsible for master node only 
+- Install Control plane processes :
+   - API Server
+   - Scheduler
+   - Controller manager
+   - etcd 
+   
+Why EKS ?
+
+- Running and scaling kubernetes can be difficult
+- Properly securing kubernetes increases operational overhead 
+- Tight integration with other AWS Services
+ 
+As we know EKS is responsible for managing master node then
+
+What about the worker node ?
+
+- EKS doe not manage worker nodes , it is up to you to setup the worker node 
+- Ways you can provision your nodes :
+     - Self-managed nodes 
+	 - Managed node group
+	 - Fargate
+	 
+1. Self-managed nodes :
+   - User must provision manually EC2 instances
+   - All kubernetes worker p must be installed:(have to manually set them up)
+        - Kubelet
+		- Kubeproxy
+		- Container runtime
+   - Updates and security patches arethe users responsibiity
+   - Register node with control plane
+   
+2. Managed Node group :
+   - Automates the provisioning and lifecycle management of ec2 nodes
+   - Managed nodes run EKS optimized images
+   - Streamlined way to manage lifecycle of nodes using single AWS/EKS API call :
+        - Create ec2
+		- Update ec2
+		- Terminate ec2
+   - Every node is part of an Auto Scaling group thats managedfor you by EKS
+   
+3. Fargate :
+   - Follows a serverless architecture
+   - Fargate will create worker nodes on demand
+   - no need to provision/maintain EC2 server
+   - Based on container requirements Fargate will automatically select optimal EC2 sizing
+   - You only pay for what you use means it will automatically scale up ordown
+   
+   
+   
+Creating an EKS cluster:
+
+- Cluster name , K8s version
+- IAM role for cluster :
+    - provisioning nodes
+	- storage
+	- secrets
+- Select VPC and Subnet
+- define security group for cluster 
+
+Create worker nodes :
+
+- Create Node Group
+- Select instances type
+- Define min/max number of nodes
+- Specify EKS cluster to connect to 
+
+Connect to cluster from local machine
+
+- To connect to EKS cluster
+1. Go to console get the cluster info
+2. Run " $ kubectl config set-clusters "
+
+
+Methods to create EKS Cluster :
+
+1. AWS CONSOLE :
+    - create cluster
+	- create worker node
+	- setup kubectl to connect
+
+2.Eksctl :
+	- Run " eksctl create cluster"
+	- it will automatically provision your vpc ,control plane, worker nodes, security group
+	- to delete " eksctl remove cluster"
+	
+3. IaC - Terraform/Pulumi
+    - Define your infrastucture as code and deploy it on kubernetes cluster
+	
+	
+Use case of eksctl to create cluster :
+
+eksctl create cluster -n Cluster1 --nodegroup-name ng1 --region us-west-2 --node-type t2.micro --nodes 2

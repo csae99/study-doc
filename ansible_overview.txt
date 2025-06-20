@@ -1,0 +1,288 @@
+Ansible Overview
+
+What is Ansible?
+Ansible is an open-source automation tool used for:
+- Configuration Management
+- Application Deployment
+- Orchestration
+- Provisioning
+- Infrastructure as Code (IaC)
+
+It uses YAML (Yet Another Markup Language) to describe automation jobs, in the form of playbooks.
+
+---
+
+Basic Concepts
+
+1. Inventory
+A file (INI, YAML, or dynamic script) that defines the hosts (nodes) you want to manage.
+
+Example:
+```ini
+[web]
+webserver1 ansible_host=192.168.1.10
+
+[db]
+dbserver1 ansible_host=192.168.1.20
+```
+---
+[web]
+ubuntu1 ansible_host=YOUR_EC2_PUBLIC_IP_1 ansible_ssh_user=ubuntu ansible_ssh_pass=your_password
+ubuntu2 ansible_host=YOUR_EC2_PUBLIC_IP_2 ansible_ssh_user=ubuntu ansible_ssh_pass=your_password
+
+[all:vars]
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no'
+---
+or
+---
+[web]
+ubuntu1 ansible_host=YOUR_EC2_PUBLIC_IP_1
+ubuntu2 ansible_host=YOUR_EC2_PUBLIC_IP_2
+
+[web:vars]
+ansible_ssh_user=ubuntu
+ansible_ssh_pass=password
+ansible_ssh_private_key_file=/path/to/your/private_key.pem
+ansible_ssh_extra_args='-o StrictHostKeyChecking=no'
+---
+
+2. Ad-Hoc Commands
+Quick, one-off commands run without playbooks.
+
+Example:
+```bash
+ansible web -m ping
+ansible all -a "uptime"
+```
+
+3. Modules
+Reusable, standalone scripts Ansible executes. Examples:
+- `ping`
+- `yum` / `apt`
+- `copy`
+- `file`
+- `service`
+
+Run with:
+```bash
+ansible all -m copy -a "src=hello.txt dest=/tmp/hello.txt"
+```
+
+4. Playbooks
+YAML-based files describing what to automate.
+
+Basic Playbook:
+```yaml
+- hosts: web
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+```
+
+---
+
+5. Variables
+Used for reusability and customization.
+```yaml
+vars:
+  app_port: 8080
+```
+
+Can be stored in:
+- Playbooks
+- Host/Group vars
+- Inventory
+- External files
+
+6. Conditionals & Loops
+Control task execution.
+
+Conditional:
+```yaml
+when: ansible_os_family == "Debian"
+```
+
+Loop:
+```yaml
+with_items:
+  - nginx
+  - apache2
+```
+
+7. Roles
+Structured way to organize playbooks.
+```bash
+roles/
+├── webserver/
+│   ├── tasks/
+│   ├── handlers/
+│   ├── templates/
+│   └── vars/
+```
+Run with:
+```yaml
+roles:
+  - webserver
+```
+
+8. Handlers
+Trigger tasks when something changes.
+```yaml
+notify: restart nginx
+```
+
+Defined in:
+```yaml
+handlers:
+  - name: restart nginx
+    service:
+      name: nginx
+      state: restarted
+```
+
+---
+
+
+9. Templates (Jinja2)
+Dynamic config files.
+
+Example:
+```yaml
+template:
+  src: nginx.conf.j2
+  dest: /etc/nginx/nginx.conf
+```
+
+Template (nginx.conf.j2):
+```jinja
+server {
+    listen {{ app_port }};
+}
+```
+
+10. Ansible Vault
+Encrypt secrets.
+
+Encrypt:
+```bash
+ansible-vault encrypt secrets.yml
+```
+
+Use:
+```yaml
+vars_files:
+  - secrets.yml
+```
+
+11. Dynamic Inventory
+Generate inventory from cloud providers like AWS, Azure, GCP.
+
+Example:
+```bash
+ansible-inventory -i aws_ec2.yaml --list
+```
+
+12. Ansible Tower / AWX
+Web UI, RBAC, job scheduling, logs, and more.
+
+13. Callbacks, Plugins & Custom Modules
+Extend Ansible:
+- Write callback plugins for notifications/logging
+- Create custom modules in Python
+- Use filters to manipulate data
+
+---
+
+Common Use Cases
+- Install and configure web servers (Apache, Nginx)
+- Setup databases (MySQL, PostgreSQL)
+- Manage cloud infrastructure (AWS, Azure, GCP)
+- Deploy applications (Docker, Kubernetes)
+- Enforce security policies (firewall, SSH config)
+
+
+
+Primary Industry Use Cases of Ansible
+
+ 1. Configuration Management
+- Maintain consistent configuration across servers (web, DB, app, etc.)
+- Example: Ensure Nginx, Docker, Java, or MySQL is installed and configured identically on all target nodes.
+- Avoids "it works on my machine" scenarios.
+
+ 2. Infrastructure Provisioning (IaC)
+- Provision infrastructure on cloud providers like AWS, Azure, GCP using Ansible modules or dynamic inventories.
+- Commonly used alongside Terraform (Terraform handles infra creation, Ansible handles config).
+
+ 3. Application Deployment
+- Automate code deployment for microservices, APIs, or monolith apps.
+- Used to deploy:
+  - Backend services (Python, Node.js, Java, etc.)
+  - Web apps and static websites
+  - Containers (via Docker or Kubernetes)
+- Ensure zero-downtime deployments with rolling updates or Blue-Green deployments.
+
+ 4. Orchestration
+- Coordinate the workflow between multiple services or systems.
+- Example: After provisioning a database, wait for it to be ready before configuring your app.
+- Works well for multi-tier deployments.
+
+ 5. Security Automation
+- Patch management: Automatically update packages to fix vulnerabilities.
+- Configure firewalls, fail2ban, SELinux, user access, and auditing.
+- Enforce compliance: Apply CIS hardening standards.
+
+ 6. CI/CD Pipelines
+- Automate post-build deployment steps in pipelines (Jenkins, GitHub Actions, GitLab CI).
+- Used for:
+  - Deploying new app versions
+  - Rolling back on failure
+  - Running smoke tests or health checks
+
+ 7. Cloud & Hybrid Cloud Management
+- Provision and configure virtual machines, storage, and networking resources.
+- Support for AWS, Azure, GCP, OpenStack.
+- Hybrid environments (e.g., on-prem + cloud) are easier to manage with one automation language.
+
+ 8. Container Orchestration & Kubernetes
+- Manage Docker containers and images.
+- Deploy apps to Kubernetes using K8s modules or Helm charts with Ansible.
+- Automate Helm deployments, kube manifests, secrets injection, etc.
+
+---
+
+ Examples in Action
+
+| Scenario                 | What Ansible Does                                                     |
+|--------------------------|-----------------------------------------------------------------------|
+| A new developer joins    | Automatically adds SSH keys and configures dev environment            |
+| Deploying a microservice | Pulls latest code, builds Docker image, restarts container            |
+| Patching servers         | Installs latest security patches across 100+ VMs                      |
+| Scaling web servers      | Provisions new EC2 instances, installs web stack, joins load balancer |
+| Disaster recovery        | Rebuilds environment from code (Ansible + version-controlled config)  |
+
+---
+
+Why Enterprises Use Ansible
+
+- Agentless – No agent required on target systems, just SSH (or WinRM for Windows)
+- Human-readable YAML – Easy for teams to understand and contribute
+- Modular – Thousands of built-in and third-party modules
+- Idempotent – Safe to run multiple times without causing side effects
+- Community + Enterprise Support – Red Hat offers Ansible Automation Platform for enterprise features
+
+---
+
+Tools Often Used Alongside Ansible
+
+| Tool                               | Use                                                         |
+|------------------------------------|-------------------------------------------------------------|
+| Terraform                          | Provisioning infrastructure (e.g., EC2, VPC, Load Balancer) |
+| Docker / Podman                    | Build and run containers                                    |
+| Kubernetes                         | Container orchestration                                     |
+| Jenkins, GitHub Actions, GitLab CI | CI/CD automation                                            |
+| Vault (HashiCorp) or Ansible Vault | Secrets management                                          |
+| AWX / Ansible Tower                | Web UI, job scheduling, RBAC for Ansible                    |
+
+-

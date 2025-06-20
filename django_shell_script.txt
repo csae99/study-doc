@@ -1,0 +1,97 @@
+#!/bin/bash
+
+# Deploy a Django app and handle errors
+
+# Function to clone the Django app code
+code_clone() {
+    echo "Cloning the Django app..."
+    if [ -d "django-notes-app" ]; then
+        echo "The code directory already exists. Skipping clone."
+    else
+        git clone https://github.com/LondheShubham153/django-notes-app.git || {
+            echo "❌ Failed to clone the code."
+            return 1
+        }
+    fi
+}
+
+# Function to install required dependencies
+install_requirements() {
+    echo "Installing dependencies..."
+    sudo apt-get update && sudo apt-get install -y \
+        docker.io \
+        docker-compose \
+        nginx || {
+        echo "❌ Failed to install dependencies."
+        return 1
+    }
+}
+
+# Function to perform required restarts
+required_restarts() {
+    echo "Performing required restarts..."
+
+    # Give current user permission to Docker socket
+    sudo chown "$USER" /var/run/docker.sock || {
+        echo "❌ Failed to change ownership of docker.sock."
+        return 1
+    }
+
+    # Start and enable Docker if possible
+    echo "🔁 Enabling and restarting Docker..."
+    if sudo systemctl enable docker && sudo systemctl restart docker; then
+        echo "✅ Docker service restarted successfully."
+    else
+        echo "❌ Docker service failed to start. Run 'systemctl status docker' for details."
+        return 1
+    fi
+
+    echo "🔁 Enabling and restarting Nginx..."
+    sudo systemctl enable nginx && sudo systemctl restart nginx || {
+        echo "❌ Failed to start Nginx."
+        return 1
+    }
+}
+
+# Function to deploy the Django app
+deploy() {
+    echo "Building and deploying the Django app..."
+    cd django-notes-app || {
+        echo "❌ Directory django-notes-app not found."
+        return 1
+    }
+
+    docker build -t notes-app . && docker-compose up -d || {
+        echo "❌ Failed to build and deploy the app."
+        return 1
+    }
+}
+
+# Main deployment script
+echo "********** DEPLOYMENT STARTED **********"
+
+# Clone the code
+if ! code_clone; then
+    echo "📁 Skipping code clone step (already present or failed)."
+fi
+
+# Install dependencies
+if ! install_requirements; then
+    echo "❌ Dependency installation failed. Exiting."
+    exit 1
+fi
+
+# Perform required restarts
+if ! required_restarts; then
+    echo "❌ Service restart failed. Exiting."
+    exit 1
+fi
+
+# Deploy the app
+if ! deploy; then
+    echo "❌ Deployment failed. Mailing the admin..."
+    # Add email or notification command here
+    exit 1
+fi
+
+echo "********** DEPLOYMENT COMPLETED SUCCESSFULLY **********"

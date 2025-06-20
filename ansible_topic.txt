@@ -1,0 +1,552 @@
+Ansible Topics
+
+
+Introduction
+- What is Ansible?
+- Use cases & advantages
+- How Ansible works (push-based, agentless)
+- Architecture: Control Node vs Managed Nodes
+
+Installation & Setup
+- Installing Ansible (on Linux/macOS/WSL)
+- Setting up inventory (hosts file)
+- SSH Key-based authentication
+- Basic Ansible CLI commands
+
+Your First Playbook
+- YAML basics
+- Writing a simple playbook
+- Running the playbook with `ansible-playbook`
+- `ansible` ad-hoc commands (e.g., `ansible all -m ping`)
+
+Modules
+- What are modules?
+- Common modules:
+  - `ping`, `command`, `shell`, `copy`, `file`, `yum`/`apt`, `service`, `package`, `user`, `debug`
+
+---
+
+Playbooks Deep Dive
+- `hosts`, `tasks`, `vars`, `handlers`
+- Conditionals (`when`)
+- Loops (`with_items`, `loop`)
+- Tags
+- Error handling with `ignore_errors`, `block`, `rescue`, `always`
+
+Variables
+- Variable types (host, group, playbook, role, extra-vars)
+- Variable precedence
+- Registering variables
+- `set_fact`
+- Jinja2 templating
+
+Templates
+- Using `template` module
+- Jinja2 syntax and filters
+- Templating config files (e.g., Nginx, Apache)
+
+Inventory Management
+- Static vs Dynamic inventory
+- Grouping hosts
+- Host and group variables
+
+
+Roles
+- What are roles?
+- Directory structure of a role
+- Creating reusable roles
+- Using `ansible-galaxy` to install/share roles
+
+Ansible Galaxy
+- Installing community roles
+- Publishing your own role
+
+Ansible Vault
+- Encrypting secrets
+- Using `ansible-vault` to encrypt/decrypt/edit files
+- Integrating vault with playbooks
+
+Advanced Modules
+- `lineinfile`, `blockinfile`, `cron`, `git`, `docker_container`, `k8s`
+- Custom modules (optional)
+
+Facts and Custom Facts
+- Using `ansible_facts`
+- Writing custom facts
+
+Ansible Tower (AWX)
+- Introduction to AWX/Tower
+- Installing AWX locally
+- Creating jobs, templates, and managing inventories via UI
+
+---
+
+
+CI/CD Integration
+- Integrating Ansible with Jenkins/GitLab CI
+- Using Ansible in deployment pipelines
+
+Working with Cloud Providers
+- AWS, GCP, Azure modules
+- Provisioning resources
+- Dynamic inventory from cloud
+
+Performance Tuning
+- Asynchronous tasks
+- Parallel execution (`forks`)
+- Strategy plugins (e.g., `free`, `linear`)
+
+Best Practices
+- Folder structure for large projects
+- Using collections
+- Linting playbooks (`ansible-lint`)
+- Writing idempotent playbooks
+
+---
+
+ 📚 Bonus: Learning Resources
+- Official Docs: [https://docs.ansible.com/](https://docs.ansible.com/)
+- YouTube Channels: FreeCodeCamp, TechWorld with Nana
+- Hands-On Practice: Vagrant, Docker, or Cloud VMs
+
+ Explanation
+
+
+
+---
+
+1. What is Ansible?
+Ansible is an open-source automation tool used for configuration management, application deployment, and task automation. It allows you to manage servers by 
+writing simple YAML files called playbooks.
+
+Why it's popular:
+- Agentless (uses SSH)
+- Easy to learn (YAML syntax)
+- Idempotent (safe to re-run)
+
+---
+
+2. Ansible Architecture
+- Control Node: The system where Ansible is installed and run.
+- Managed Nodes: Target machines that Ansible manages via SSH (Linux) or WinRM (Windows).
+- Inventory: A file where you define your managed nodes (usually `/etc/ansible/hosts`).
+
+---
+
+3. Installing Ansible
+On Ubuntu/Debian:
+```bash
+sudo apt update
+sudo apt install ansible -y
+```
+
+On RHEL/CentOS:
+```bash
+sudo yum install epel-release -y
+sudo yum install ansible -y
+```
+
+Check version:
+```bash
+ansible --version
+```
+
+---
+
+4. Setting Up Inventory
+Basic static inventory:
+```ini
+[webservers]
+192.168.1.10
+web1.example.com
+
+[dbservers]
+db1 ansible_host=192.168.1.20 ansible_user=ubuntu
+```
+
+---
+5. SSH Key-based Authentication
+Generate key:
+```bash
+ssh-keygen
+ssh-copy-id user@host
+```
+
+Now Ansible can connect to the remote host without password prompts.
+
+---
+
+6. Ad-Hoc Commands
+Run quick commands without a playbook:
+```bash
+ansible all -m ping
+ansible webservers -m shell -a "df -h"
+```
+
+- `-m`: module (like `ping`, `shell`, etc.)
+- `-a`: arguments to the module
+
+---
+
+7. Your First Playbook
+```yaml
+- name: Install nginx
+  hosts: webservers
+  become: yes
+  tasks:
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+```
+
+Run it:
+```bash
+ansible-playbook nginx.yml
+```
+
+---
+
+8. Modules
+Modules are units of work Ansible performs. Some common ones:
+- `ping`: Checks connectivity
+- `command`: Runs a command
+- `shell`: Runs command through shell
+- `copy`: Copies files
+- `file`: Sets permissions/ownership
+- `yum`/`apt`: Installs packages
+- `service`: Manages services
+
+---
+
+9. Playbooks Deep Dive
+
+- `hosts`: Which group or host the playbook targets
+- `tasks`: What to do
+- `become`: Use sudo
+- `handlers`: Triggered by "notify"
+- `name`: Describes the task
+
+Handlers Example:
+```yaml
+- name: Restart nginx
+  service:
+    name: nginx
+    state: restarted
+  listen: restart nginx
+```
+
+Use in tasks:
+```yaml
+notify: restart nginx
+```
+
+---
+
+10. Conditionals
+Use `when` to control task execution:
+```yaml
+- name: Install Apache only on Ubuntu
+  apt:
+    name: apache2
+    state: present
+  when: ansible_os_family == "Debian"
+```
+
+---
+
+11. Loops
+```yaml
+- name: Install multiple packages
+  apt:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - nginx
+    - git
+    - curl
+```
+
+---
+
+12. Tags
+Tags let you run specific parts of a playbook:
+```yaml
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+  tags: nginx
+```
+Run with:
+```bash
+ansible-playbook site.yml --tags nginx
+```
+
+---
+
+13. Error Handling
+```yaml
+- name: Try a command
+  shell: /bin/false
+  ignore_errors: yes
+```
+
+Use `block`, `rescue`, and `always` for structured error handling.
+
+---
+
+14. Variables
+
+Types:
+- Playbook variables
+- Host/group vars
+- Facts
+- Extra vars (`--extra-vars`)
+
+Example:
+```yaml
+vars:
+  app_port: 8080
+
+tasks:
+  - name: Print port
+    debug:
+      msg: "App is running on {{ app_port }}"
+```
+
+---
+
+15. Registering Variables
+Capture the output of a task:
+```yaml
+- name: Check uptime
+  shell: uptime
+  register: result
+
+- debug:
+    var: result.stdout
+```
+
+---
+
+16. set_fact
+Set a custom fact:
+```yaml
+- set_fact:
+    env: production
+```
+
+---
+
+17. Templates
+Use Jinja2 templating in files:
+```yaml
+- template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+```
+
+In `nginx.conf.j2`:
+```jinja2
+server {
+    listen {{ app_port }};
+}
+```
+
+---
+
+18. Inventory Management
+- Static (ini/yaml)
+- Dynamic (AWS, GCP)
+- Grouping hosts
+```ini
+[web]
+web1
+web2
+
+[app:children]
+web
+```
+
+Use host/group variables:
+```ini
+[web]
+web1 ansible_user=ubuntu ansible_port=22
+```
+---
+
+19. Roles
+
+Roles help organize playbooks into reusable units.
+
+Structure:
+```
+roles/
+  nginx/
+    tasks/
+      main.yml
+    templates/
+      nginx.conf.j2
+    handlers/
+      main.yml
+```
+
+Use in playbook:
+```yaml
+- hosts: web
+  roles:
+    - nginx
+```
+
+---
+
+20. Ansible Galaxy
+
+Use public roles:
+```bash
+ansible-galaxy install geerlingguy.nginx
+```
+
+Create your own:
+```bash
+ansible-galaxy init myrole
+```
+
+---
+
+21. Ansible Vault
+Encrypt sensitive data:
+```bash
+ansible-vault encrypt secrets.yml
+ansible-vault view secrets.yml
+```
+
+Use with playbooks:
+```yaml
+vars_files:
+  - secrets.yml
+```
+
+---
+
+22. Advanced Modules
+- `lineinfile`: Edit lines in files
+- `blockinfile`: Insert text blocks
+- `cron`: Manage cron jobs
+- `git`: Clone repos
+- `docker_container`: Manage Docker containers
+- `k8s`: Manage Kubernetes resources
+
+---
+
+23. Facts & Custom Facts
+
+Facts are system info collected automatically:
+```yaml
+- debug:
+    var: ansible_distribution
+```
+
+Custom fact example (in `/etc/ansible/facts.d/custom.fact`):
+```ini
+[general]
+env=production
+```
+
+---
+
+24. Ansible Tower / AWX
+
+AWX is the open-source version of Ansible Tower:
+- Web UI for managing playbooks
+- Inventory management
+- Role-based access
+- Job templates
+
+Install via Docker:
+```bash
+git clone https://github.com/ansible/awx
+```
+
+---
+
+25. CI/CD Integration
+
+Use Ansible in CI pipelines (e.g., Jenkins):
+```groovy
+stage('Deploy') {
+    steps {
+        sh 'ansible-playbook -i inventory deploy.yml'
+    }
+}
+```
+
+With GitLab CI:
+```yaml
+deploy:
+  script:
+    - ansible-playbook -i inventory playbook.yml
+```
+
+---
+
+26. Cloud Modules
+Ansible supports AWS, Azure, GCP:
+- `amazon.aws.ec2`
+- `google.cloud.gcp_compute_instance`
+- `azure.azcollection.az_vm`
+
+Use dynamic inventories:
+```bash
+ansible-inventory -i aws_ec2.yml --list
+```
+
+---
+
+27. Performance Tuning
+- Async tasks:
+  ```yaml
+  - shell: long_task.sh
+    async: 300
+    poll: 0
+  ```
+
+- Forks: Increase parallelism
+  ```ini
+  [defaults]
+  forks = 20
+  ```
+
+- Strategy plugins:
+  - `linear`: default
+  - `free`: run tasks as soon as they're ready
+
+---
+
+28. Best Practices
+
+- Use roles and collections
+- Keep playbooks idempotent
+- Store secrets in Vault
+- Lint playbooks with:
+  ```bash
+  ansible-lint playbook.yml
+  ```
+
+- Organize directories like:
+  ```
+  site.yml
+  inventories/
+  roles/
+  group_vars/
+  host_vars/
+  ```
+
+---
+
+ 📚 Bonus: Learning Resources
+- 📘 Official Docs: https://docs.ansible.com/
+- 📺 YouTube: TechWorld with Nana, FreeCodeCamp
+- 💡 Practice: Try building a LAMP stack, or deploy an app to AWS EC2
+- 🧑‍💻

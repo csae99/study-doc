@@ -1,0 +1,284 @@
+Ansible CLI commands
+
+ 1. `ansible`
+The `ansible` command is used to run individual ad-hoc commands against your inventory.
+
+ Usage:
+```bash
+ansible <host-pattern> -i <inventory> -m <module> [options]
+```
+
+- Example:
+  ```bash
+  ansible ubuntu1 -m ping
+  ```
+
+  - This runs the `ping` module on `ubuntu1` host.
+
+ Common Options:
+- `-i <inventory>`: Specifies the inventory file (or hosts).
+- `-m <module>`: Specifies the module to run (e.g., `ping`, `command`, `shell`).
+- `-u <user>`: Specifies the SSH user.
+- `--ask-become-pass`: Prompts for the sudo password (if running with privilege escalation).
+- `-e <extra-vars>`: Pass extra variables to the command.
+
+---
+
+ 2. `ansible-playbook`
+The `ansible-playbook` command is used to run playbooks. Playbooks contain multiple tasks that can be run sequentially on the hosts.
+
+ Usage:
+```bash
+ansible-playbook <playbook.yml> [options]
+```
+
+- Example:
+  ```bash
+  ansible-playbook deploy.yml
+  ```
+
+  - This runs the playbook `deploy.yml`.
+
+ Common Options:
+- `-i <inventory>`: Specifies the inventory file.
+- `-u <user>`: Specifies the SSH user.
+- `--ask-become-pass`: Prompts for the sudo password.
+- `--check`: Runs the playbook in check mode (dry-run).
+- `--diff`: Shows differences in files (useful for file changes).
+- `--limit <host-pattern>`: Limits the playbook run to specific hosts or groups.
+- `--extra-vars <key=value>`: Passes extra variables to the playbook.
+- `--start-at-task <task-name>`: Starts the playbook at a specific task.
+
+---
+
+ 3. `ansible-doc`
+The `ansible-doc` command is used to display documentation for Ansible modules.
+
+ Usage:
+```bash
+ansible-doc <module-name>
+```
+
+- Example:
+  ```bash
+  ansible-doc ping
+  ```
+
+  - This displays documentation for the `ping` module.
+
+ Common Options:
+- `-l`: Lists all available modules.
+- `-t <type>`: Specifies the module type to filter by (e.g., `system`, `cloud`).
+
+---
+
+ 4. `ansible-galaxy`
+The `ansible-galaxy` command is used to interact with the Ansible Galaxy, a public repository of Ansible roles and collections.
+
+ Usage:
+```bash
+ansible-galaxy <command> [options]
+```
+
+ Subcommands:
+- install: Installs a role or collection.
+  - Example: `ansible-galaxy install <role-name>`
+- init: Creates a new role or collection.
+  - Example: `ansible-galaxy init <role-name>`
+- search: Searches for roles in Ansible Galaxy.
+  - Example: `ansible-galaxy search <role-name>`
+- list: Lists installed roles.
+  - Example: `ansible-galaxy list`
+- remove: Removes a role.
+  - Example: `ansible-galaxy remove <role-name>`
+
+---
+
+ 5. `ansible-pull`
+The `ansible-pull` command is used to pull and run an Ansible playbook from a remote repository, which is ideal for use on client nodes.
+
+ Usage:
+```bash
+ansible-pull -U <git-repository-url> [options]
+```
+
+- Example:
+  ```bash
+  ansible-pull -U https://github.com/myusername/my-repo.git
+  ```
+
+ Common Options:
+- `-C <branch>`: Specify a branch or tag to use for the playbook.
+- `-d <directory>`: Specifies the directory to pull the playbook to.
+- `-e <extra-vars>`: Pass extra variables to the playbook.
+
+---
+
+ 6. `ansible-vault`
+The `ansible-vault` command is used for encrypting and decrypting files and values, useful for managing sensitive data such as passwords and secrets.
+
+ Usage:
+```bash
+ansible-vault <command> [options]
+```
+
+ Subcommands:
+- create: Creates a new encrypted file.
+  - Example: `ansible-vault create secrets.yml`
+- edit: Edit an encrypted file.
+  - Example: `ansible-vault edit secrets.yml`
+- encrypt: Encrypt an existing file.
+  - Example: `ansible-vault encrypt plain_file.yml`
+- decrypt: Decrypt a file.
+  - Example: `ansible-vault decrypt secrets.yml`
+- rekey: Change the password of an encrypted file.
+  - Example: `ansible-vault rekey secrets.yml`
+
+ Common Options:
+- `--ask-vault-pass`: Prompt for the vault password.
+- `--vault-password-file <file>`: Specify a file containing the vault password.
+
+---
+
+ 7. `ansible-playbook-lint`
+The `ansible-playbook-lint` command is used to check playbooks for syntax issues and best practices.
+
+ Usage:
+```bash
+ansible-playbook-lint <playbook.yml> [options]
+```
+
+- Example:
+  ```bash
+  ansible-playbook-lint deploy.yml
+  ```
+
+ Common Options:
+- `--exclude <pattern>`: Exclude files or directories that match the given pattern.
+
+---
+
+ 8. `ansible-inventory`
+The `ansible-inventory` command is used to display and interact with your inventory.
+
+ Usage:
+```bash
+ansible-inventory <options>
+```
+
+ Common Options:
+- `--list`: Shows all hosts and groups in the inventory.
+  - Example: `ansible-inventory -i inventory.ini --list`
+- `--graph`: Shows the inventory as a graph.
+  - Example: `ansible-inventory -i inventory.ini --graph`
+- `--yaml`: Output the inventory in YAML format.
+  - Example: `ansible-inventory -i inventory.ini --yaml`
+
+---
+
+ 9. `ansible-console`
+The `ansible-console` command starts an interactive console session to interact with Ansible modules in real-time.
+
+ Usage:
+```bash
+ansible-console
+```
+
+- Example:
+  ```bash
+  ansible-console
+  ```
+
+ Common Options:
+- `-i <inventory>`: Specifies the inventory to use.
+- `--user <username>`: Specify the SSH username.
+
+---
+
+
+ 11. `ansible-config`
+The `ansible-config` command is used to manage Ansible's configuration files.
+
+ Usage:
+```bash
+ansible-config <command> [options]
+```
+
+ Subcommands:
+- list: Lists available configuration options.
+  - Example: `ansible-config list`
+- dump: Dumps the configuration in YAML format.
+  - Example: `ansible-config dump`
+
+---
+
+12. Troublehsooting playbook
+
+- ansible-playbook switches_demo.yml -vv
+- more the v more the detailed verbose you will get max verbose (-vvvv)
+---
+13. Run playbook step-wise
+
+- ansible-playbook switches_demo.yml --step
+
+PLAY [switches playbook] ****************************************************************************************************************************
+Perform task: TASK: Gathering Facts (N)o/(y)es/(c)ontinue: N
+
+Perform task: TASK: Gathering Facts (N)o/(y)es/(c)ontinue: ******************************************************************************************
+Perform task: TASK: switch (N)o/(y)es/(c)ontinue: y
+
+Perform task: TASK: switch (N)o/(y)es/(c)ontinue: ***************************************************************************************************
+
+TASK [switch] ***************************************************************************************************************************************
+ok: [ubuntu1]
+
+PLAY RECAP ******************************************************************************************************************************************
+ubuntu1                    : ok=1    changed=0    unreachable=0    failed=0    skipped=0    rescued=0    ignored=0
+---
+14. Check the task
+
+- ansible-playbook switches_demo.yml --check -vvv
+- it doesnt apply the task but checks what all will be changed if the task is applied
+---
+15. Register
+- Capture the output of a task
+---
+---
+- name: register playbook
+  hosts: centos1
+  become: yes
+  gather_facts: no
+  ignore_errors: yes
+  vars:
+    http_port: 80
+
+  tasks:
+    - name: Install Apache (httpd)
+      package:
+        name: httpd
+        state: present
+      register: install_apache
+
+    - name: Change Apache port
+      lineinfile:
+        path: /tmp/httpd/conf/httpd.conf
+        regexp: "^Listen"
+        line: "Listen {{ http_port }}"
+      when: install_apache.rc == 0
+      register: change_apache_port
+
+    - name: Start Apache service
+      service:
+        name: httpd
+        state: started
+        enabled: true
+      when: change_apache_port is defined and change_apache_port.rc == 0
+      register: started_httpd
+
+    - name: Sending status message
+      debug:
+        msg: >
+          Install Apache status: {{ 'Success' if install_apache.rc == 0 else 'Fail' }},
+          Change Apache port: {{ 'Success' if change_apache_port is defined and 'rc' in change_apache_port and change_apache_port.rc == 0 else 'Fail' }},
+		  Start Apache service: {{ 'Success' if started_httpd is defined and 'rc' in started_httpd and started_httpd.rc == 0 else 'Fail' }}
+---

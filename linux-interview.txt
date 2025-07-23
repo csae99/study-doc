@@ -1,0 +1,845 @@
+ 1. What is Linux and how is it different from Unix?
+
+ Linux is a free, open-source operating system based on Unix. It was created by Linus Torvalds in 1991.
+ Unix is a proprietary OS developed in the 1970s at AT\&T's Bell Labs.
+ Key differences:
+
+   License: Linux is open-source (GPL), while most Unix systems are proprietary.
+   Usage: Linux is widely used on servers, desktops, and embedded systems. Unix is mostly used in large enterprise environments.
+   Variants: Linux has many distributions (Ubuntu, CentOS, Debian). Unix has flavors like AIX, HP-UX, and Solaris.
+
+---
+
+ 2. What is the difference between Linux and Windows?
+
+| Feature       | Linux                         | Windows                      |
+| ------------- | ----------------------------- | ---------------------------- |
+| Source Code   | Open-source                   | Closed-source                |
+| Cost          | Free                          | Paid (mostly)                |
+| Filesystem    | Ext4, XFS, Btrfs, etc.        | NTFS, FAT32                  |
+| CLI Support   | Strong command-line interface | GUI-focused                  |
+| Security      | Considered more secure        | More frequent malware issues |
+| Customization | Highly customizable           | Limited customization        |
+
+---
+
+ 3. What is the Linux file system hierarchy?
+
+The Linux filesystem follows a tree-like hierarchy starting from the root `/`. Common directories include:
+
+ `/bin`: Essential binaries
+ `/boot`: Bootloader files
+ `/etc`: Configuration files
+ `/home`: User directories
+ `/var`: Variable data (logs, mail)
+ `/tmp`: Temporary files
+ `/usr`: User programs and data
+ `/dev`: Device files
+ `/proc`: Virtual filesystem for processes
+
+---
+
+ 4. What is a shell? What are some common types of shells?
+
+A shell is a command-line interface that allows users to interact with the OS.
+
+ Common shells:
+
+   `bash` (Bourne Again Shell)
+   `sh` (Bourne Shell)
+   `zsh` (Z Shell)
+   `csh` (C Shell)
+   `ksh` (Korn Shell)
+
+---
+
+ 5. What are runlevels in Linux?
+
+Runlevels define the state of the machine:
+
+ `0`: Halt
+ `1`: Single-user mode
+ `3`: Multi-user without GUI
+ `5`: Multi-user with GUI
+ `6`: Reboot
+
+Modern systems (with `systemd`) use targets (like `multi-user.target`, `graphical.target`) instead.
+
+---
+
+ 6. How do you check the current working directory?
+
+```bash
+pwd
+```
+
+---
+
+ 7. What does `chmod 755` mean?
+
+Sets file permissions:
+
+ 7 (owner): read (4) + write (2) + execute (1)
+ 5 (group): read (4) + execute (1)
+ 5 (others): read (4) + execute (1)
+
+So:
+
+```bash
+chmod 755 file
+```
+
+gives full rights to the owner and read/execute to others.
+
+---
+
+ 8. How do you view hidden files?
+
+```bash
+ls -a
+```
+
+Files starting with `.` are hidden.
+
+---
+
+ 9. What is the difference between `>` and `>>`?
+
+ `>`: Overwrites a file.
+ `>>`: Appends to a file.
+
+Example:
+
+```bash
+echo "Hello" > file.txt    Overwrites
+echo "World" >> file.txt   Appends
+```
+
+---
+
+ 10. How do you search for a string in a file?
+
+```bash
+grep "search_term" filename
+```
+
+Use `-r` for recursive search in directories.
+
+---
+
+ 11. How do you check memory usage?
+
+```bash
+free -h
+```
+
+or
+
+```bash
+top
+```
+
+or
+
+```bash
+vmstat
+```
+
+---
+
+ 12. What command shows disk usage per directory?
+
+```bash
+du -h --max-depth=1
+```
+
+or
+
+```bash
+du -sh 
+```
+
+---
+
+ 13. How do you find a file by name?
+
+```bash
+find /path -name "filename"
+```
+
+or
+
+```bash
+locate filename
+```
+
+(`locate` is faster but needs `updatedb`)
+
+---
+
+ 14. What is cron and how do you schedule a job?
+
+cron is a daemon to schedule recurring tasks.
+
+Edit the crontab:
+
+```bash
+crontab -e
+```
+
+Crontab syntax:
+
+```
+* * * * * command
+| | | | |
+| | | | └─── Day of week (0 - 7)
+| | | └───── Month (1 - 12)
+| | └─────── Day of month (1 - 31)
+| └───────── Hour (0 - 23)
+└─────────── Minute (0 - 59)
+
+```
+
+Example (run script every day at 2 AM):
+
+```bash
+0 2 * * * /path/to/script.sh
+```
+
+---
+
+ 15. What is the use of `top`, `ps`, and `kill` commands?
+
+ top: Real-time view of running processes.
+ ps: Displays process snapshot.
+
+  ```bash
+  ps aux
+  ```
+ kill: Sends signals to processes (like `SIGKILL`, `SIGTERM`).
+
+  ```bash
+  kill -9 PID
+  ```
+
+---
+
+1. How do you check which process is using the most CPU/memory?
+
+Use `top` or `htop`:
+
+```bash
+top
+```
+
+ Sort by CPU: Press `P`
+ Sort by memory: Press `M`
+
+Or use `ps`:
+
+```bash
+ps aux --sort=-%cpu | head
+ps aux --sort=-%mem | head
+```
+
+---
+
+2. What’s the difference between `nice` and `renice`?
+
+ `nice`: Starts a process with a defined priority (niceness).
+
+```bash
+nice -n 10 command
+```
+
+ `renice`: Changes the priority of a running process.
+
+```bash
+renice -n 5 -p PID
+```
+
+ Lower nice value = higher priority. Only root can set negative nice values.
+
+---
+
+3. What’s the difference between `kill`, `pkill`, and `killall`?
+
+| Command   | Description                               |
+| --------- | ----------------------------------------- |
+| `kill`    | Sends signal to a specific PID            |
+| `pkill`   | Sends signal to processes by name         |
+| `killall` | Sends signal to all processes with a name |
+
+Examples:
+
+```bash
+kill -9 1234
+pkill firefox
+killall firefox
+```
+
+---
+
+4. How do you analyze and troubleshoot a system that is running slowly?
+
+Checklist:
+
+ CPU usage: `top`, `htop`, `uptime`
+ Memory usage: `free -h`, `vmstat`
+ Disk I/O: `iotop`, `iostat`
+ Disk space: `df -h`
+ Processes: `ps aux --sort=-%cpu`
+ Network: `ss -tuln`, `iftop`
+ Logs: Check `/var/log/syslog`, `/var/log/messages`, `dmesg`
+
+---
+
+5. How do you check logs for a failed service?
+
+```bash
+journalctl -u <service-name>
+```
+
+Example:
+
+```bash
+journalctl -u apache2
+```
+
+For systems not using `systemd`, check:
+
+```bash
+/var/log/syslog
+/var/log/messages
+/var/log/<service>.log
+```
+
+---
+
+6. What is the use of `netstat`, `ss`, and `lsof`?
+
+| Command   | Purpose                                   |
+| --------- | ----------------------------------------- |
+| `netstat` | Show network connections (deprecated)     |
+| `ss`      | Faster alternative to netstat             |
+| `lsof`    | Lists open files, can show open ports too |
+
+Examples:
+
+```bash
+ss -tuln          # List listening ports
+lsof -i :80       # Show processes using port 80
+```
+
+---
+
+7. How do you check if a port is open and listening?
+
+```bash
+ss -tuln | grep :80
+```
+
+or
+
+```bash
+netstat -tuln | grep :80
+```
+
+or use `lsof`:
+
+```bash
+lsof -i :80
+```
+
+---
+
+8. Difference between `scp` and `rsync`?
+
+| Feature           | `scp`                      | `rsync`                          |
+| ----------------- | -------------------------- | -------------------------------- |
+| Speed             | Slower (no resume/delta)   | Faster (syncs only differences)  |
+| Resume            | No                         | Yes                              |
+| Bandwidth control | No                         | Yes (`--bwlimit`)                |
+| Syntax            | `scp file user@host:/path` | `rsync -av file user@host:/path` |
+
+---
+9. How do you configure a static IP address?
+
+For modern systems using `netplan` (Ubuntu):
+Edit `/etc/netplan/.yaml`:
+
+```yaml
+network:
+  version: 2
+  ethernets:
+    eth0:
+      dhcp4: no
+      addresses: [192.168.1.100/24]
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses: [8.8.8.8, 1.1.1.1]
+```
+
+Apply with:
+
+```bash
+sudo netplan apply
+```
+
+Or via `nmcli`:
+
+```bash
+nmcli con mod "Wired connection 1" ipv4.addresses 192.168.1.100/24
+nmcli con mod "Wired connection 1" ipv4.gateway 192.168.1.1
+nmcli con mod "Wired connection 1" ipv4.dns "8.8.8.8"
+nmcli con mod "Wired connection 1" ipv4.method manual
+nmcli con up "Wired connection 1"
+```
+
+---
+
+10. How do you flush DNS cache?
+
+ Systemd-based systems:
+
+```bash
+systemd-resolve --flush-caches
+0```
+
+ dnsmasq:
+
+```bash
+sudo /etc/init.d/dnsmasq restart
+```
+
+ nscd:
+
+```bash
+sudo service nscd restart
+```
+
+---
+
+11. How do hard links differ from soft links?
+
+| Feature       | Hard Link           | Soft (Symbolic) Link  |
+| ------------- | ------------------- | --------------------- |
+| Points to     | Inode (actual file) | File path             |
+| Cross-device  | No                  | Yes                   |
+| File deleted? | File persists       | Link breaks           |
+| Created with  | `ln source target`  | `ln -s source target` |
+
+---
+
+12. How do you mount and unmount file systems?
+
+ Mount:
+
+```bash
+sudo mount /dev/sdX1 /mnt
+```
+
+ Unmount:
+
+```bash
+sudo umount /mnt
+```
+
+ To see mounted file systems:
+
+```bash
+mount
+df -h
+```
+
+---
+
+ 13. How do you view disk partitions and usage?
+
+ Partitions:
+
+```bash
+lsblk
+fdisk -l
+```
+
+ Disk usage:
+
+```bash
+df -h
+du -sh /path/
+```
+
+---
+
+14. How do file permissions work in Linux?
+
+Three types of users:
+
+ Owner (u)
+ Group (g)
+ Others (o)
+
+Three permissions:
+
+ r (read)
+ w (write)
+ x (execute)
+
+Example:
+
+```bash
+-rwxr-xr-- 1 user group 1234 file
+```
+
+ Owner: read, write, execute
+ Group: read, execute
+ Others: read
+
+Change permissions:
+
+```bash
+chmod 755 file
+```
+
+---
+
+15. What is sticky bit, setuid, and setgid?
+
+ Sticky bit (`t`): On directories like `/tmp`, only the owner can delete their files.
+
+  ```bash
+  chmod +t /shared
+  ```
+
+ setuid (`s` on user bit): Runs the file as the file owner.
+  Example: `passwd` runs as root even when a normal user executes it.
+
+ setgid (`s` on group bit):
+
+   On files: Runs with group permissions.
+   On directories: New files inherit the directory’s group.
+
+Examples:
+
+```bash
+chmod u+s file    # setuid
+chmod g+s file    # setgid
+chmod +t dir      # sticky bit
+```
+
+Linux Boot Process (BIOS → GRUB → init → systemd)
+
+1. BIOS/UEFI: Initializes hardware, performs POST, and locates boot device.
+2. GRUB (Bootloader): Loads the kernel (`vmlinuz`) and initrd/initramfs.
+3. Kernel:
+
+    Mounts the root filesystem (with help from `initrd/initramfs`).
+    Starts `init` (or `systemd`).
+4. init/systemd: Initializes user space and services (mounts, login, networking, etc.)
+
+---
+
+ 📦 What is initrd/initramfs?
+
+ initrd/initramfs: Temporary root filesystem loaded into memory by the bootloader.
+ Purpose:
+
+   Contains drivers/modules needed to mount the actual root filesystem.
+   Useful for systems with complex storage (e.g., LVM, encrypted drives).
+ `initrd`: Traditional, uses block device.
+ `initramfs`: Newer, uses cpio archive and tmpfs.
+
+---
+
+ 🔗 What are cgroups and namespaces?
+
+ Namespaces (Isolation):
+
+ Provide process isolation (used in containers).
+ Types: `pid`, `net`, `mnt`, `ipc`, `uts`, `user`
+
+   e.g., PID namespace: Process sees only its own PID tree.
+
+ cgroups (Resource Control):
+
+ Control resource usage (CPU, memory, I/O).
+ Organize processes into groups and apply limits.
+
+🔧 Used by containers (Docker) and systemd.
+
+---
+
+ ⚙️ How does Linux handle process scheduling?
+
+ Completely Fair Scheduler (CFS): Default Linux scheduler.
+
+   Prioritizes processes based on fairness (time slices).
+ Processes can be assigned:
+
+   Nice values (user-level priority)
+   Real-time priorities (for real-time tasks)
+ Scheduling policies:
+
+   `SCHED_OTHER`, `SCHED_FIFO`, `SCHED_RR`, `SCHED_BATCH`, etc.
+
+---
+
+ 🧩 Role of systemd and Managing Services
+
+ systemd is the init system replacing older `SysVinit`.
+ Manages:
+
+   Boot process
+   Services (units)
+   Mount points, timers, sockets
+
+ Common commands:
+
+```bash
+systemctl start nginx
+systemctl stop nginx
+systemctl enable ssh
+systemctl status apache2
+journalctl -xe       #View errors/logs
+```
+
+---
+
+ 🛡 Security & Access
+
+ SELinux/AppArmor
+
+ SELinux (Red Hat-based): MAC system using labels and contexts.
+ AppArmor (Ubuntu-based): Profile-based access control.
+
+ Troubleshooting:
+
+ Check audit logs:
+
+  ```bash
+  ausearch -m avc -ts recent
+  sealert -a /var/log/audit/audit.log
+  ```
+ View current mode:
+
+  ```bash
+  getenforce       # SELinux
+  sudo aa-status   # AppArmor
+  ```
+
+---
+
+ Securely Copy Files Between Systems
+
+ scp:
+
+  ```bash
+  scp file user@host:/path
+  ```
+
+ rsync (preferred for large transfers):
+
+  ```bash
+  rsync -avz -e ssh file user@host:/path
+  ```
+
+---
+
+ Set Up SSH Key-Based Authentication
+
+1. On local machine:
+
+   ```bash
+   ssh-keygen
+   ```
+2. Copy public key to server:
+
+   ```bash
+   ssh-copy-id user@host
+   ```
+
+Now you can log in without a password:
+
+```bash
+ssh user@host
+```
+
+---
+
+ Audit System Activity / Monitor Unauthorized Access
+
+Tools:
+
+ auditd: Kernel auditing daemon
+
+  ```bash
+  auditctl -w /etc/passwd -p wa
+  ausearch -f /etc/passwd
+  ```
+ faillog, last, lastb, wtmp, btmp
+ journalctl: View suspicious logs
+ logwatch, logrotate
+
+---
+
+ What is `sudo` vs `su`?
+
+| Tool   | Description                                                                 |
+| ------ | --------------------------------------------------------------------------- |
+| `su`   | Switches to another user (commonly root). Requires root password.           |
+| `sudo` | Executes a command as another user (default: root). Requires user password. |
+
+ `sudo` is more secure and auditable.
+
+---
+
+ 🧠 Performance & Tuning
+
+ Identify and Resolve a Memory Leak
+
+ Use `top`, `htop` → Look for growing memory usage
+ Check with:
+
+  ```bash
+  ps aux --sort=-%mem
+  ```
+ Tools:
+
+   `valgrind`, `strace`, `smem`, `pmap`
+
+---
+
+ Profiling a System Under Heavy Load
+
+Tools:
+
+ `top`, `htop`
+ `perf`: CPU profiling
+ `iotop`, `iostat`: I/O
+ `vmstat`: CPU/mem trends
+ `dstat`, `nmon`: Comprehensive stats
+ `strace`, `lsof`, `tcpdump`: Deep inspection
+
+---
+
+ Analyze I/O Wait
+
+ High I/O wait = system waiting on disk
+ Tools:
+
+  ```bash
+  iostat -xz 1
+  vmstat 1
+  iotop
+  ```
+
+Look for high `%iowait`, low idle CPU, busy devices.
+
+---
+
+ What are Kernel Modules? How Do You Manage Them?
+
+Kernel modules are drivers or features loaded into the kernel dynamically.
+
+ Load:
+
+  ```bash
+  modprobe module_name
+  ```
+ Unload:
+
+  ```bash
+  modprobe -r module_name
+  ```
+ List:
+
+  ```bash
+  lsmod
+  ```
+ Info:
+
+  ```bash
+  modinfo module_name
+  ```
+
+---
+
+ Tune Kernel Parameters with sysctl
+
+ View current setting:
+
+  ```bash
+  sysctl vm.swappiness
+  ```
+ Change temporarily:
+
+  ```bash
+  sysctl -w vm.swappiness=10
+  ```
+ Persistent change: Add to `/etc/sysctl.conf` or `/etc/sysctl.d*/.conf` and reload:
+
+  ```bash
+  sysctl -p
+  ```
+
+---
+
+ 📂 Real-World Scenarios
+
+ Process Stuck in Uninterruptible Sleep (D state)
+
+ Check with `ps aux | grep D`
+ Causes: I/O hang (NFS, disk failure)
+ Investigate:
+
+   `strace -p PID`
+   `lsof -p PID`
+   `dmesg` for I/O errors
+
+Only kernel can kill `D` state. Often requires reboot.
+
+---
+
+ Cron Job Isn’t Running – Debug Steps
+
+1. Is crond running?
+
+   ```bash
+   systemctl status cron
+   ```
+2. Check crontab:
+
+   ```bash
+   crontab -l
+   ```
+3. Ensure correct syntax (`cron` uses minimal shell).
+4. Check logs:
+
+   ```bash
+   grep CRON /var/log/syslog
+   ```
+5. Redirect output to log:
+
+   ```bash
+    * * * * * /script.sh >> /tmp/script.log 2>&1
+   ```
+
+---
+
+ Service Fails to Start After Reboot
+
+1. Check status:
+
+   ```bash
+   systemctl status myservice
+   ```
+2. View logs:
+
+   ```bash
+   journalctl -u myservice
+   ```
+3. Check `ExecStart`, environment files.
+4. Validate dependencies in `.service` file.
+5. Run manually to reproduce error.
+
